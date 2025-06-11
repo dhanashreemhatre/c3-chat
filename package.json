@@ -9,19 +9,33 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.53.0",
+    "@auth/prisma-adapter": "^2.9.1",
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/anthropic": "^0.3.21",
+    "@langchain/core": "^0.3.57",
+    "@langchain/google-genai": "^0.2.10",
+    "@langchain/openai": "^0.5.12",
+    "@prisma/client": "^6.9.0",
+    "chromadb": "^3.0.3",
+    "langchain": "^0.3.27",
+    "next": "15.3.3",
+    "next-auth": "^5.0.0-beta.28",
+    "openai": "^5.3.0",
+    "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.3"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
-    "@eslint/eslintrc": "^3"
+    "prisma": "^6.9.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
