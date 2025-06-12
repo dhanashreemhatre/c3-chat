@@ -3,25 +3,30 @@ import { NextResponse } from "next/server";
 import { AIHandler, SupportedModels } from "../../lib/ai/ai-handler";
 import { addMessage, createChat, getChatById, getChatsByUser, softDeleteAllChatsForUser } from "../../lib/db/chats";
 import { getMessagesByChatId } from "@/app/lib/db/message";
-import { getUserApiKey } from "@/app/lib/db/userApiKey";
+import { getUserApiKey, getUserByEmail } from "@/app/lib/db/user";
 import { prisma } from "@/app/lib/db/db";
 import { webSearch } from "@/app/lib/websearch"; // We'll define this helper
+import { get } from "http";
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
+  console.log("Session:", session);
+  if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { messages, provider, chatId, title, search = false } = await req.json();
-
+  const users = await getUserByEmail(session.user.email);
   // Check for user API key
-  const userApiKey = await getUserApiKey(session.user.id, provider);
+  if (!users) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  const userApiKey = await getUserApiKey(users.id, provider);
 
   let useOwnKey = false;
   if (!userApiKey) {
     // Check free usage
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: users.id } });
     if ((user?.freeChatCount ?? 0) >= 10) {
       return NextResponse.json({ error: "Free usage limit reached. Please add your own API key." }, { status: 403 });
     }
@@ -31,12 +36,13 @@ export async function POST(req: Request) {
   let currentChatId = chatId;
   // If no chatId, create a new chat
   if (!currentChatId) {
-    const chat = await createChat(session.user.id, title);
+    const chat = await createChat(users.id, title);
     currentChatId = chat.id;
   }
 
   // Save user message
   const userMessage = messages[messages.length - 1];
+  await addMessage(currentChatId, "user", userMessage.content, provider); // <-- Add this line
 
   let searchResults = null;
   if (search) {
@@ -93,35 +99,27 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const chatId = searchParams.get("chatId");
 
-  if (!chatId) {
-    return NextResponse.json({ error: "chatId is required" }, { status: 400 });
-  }
-
-  // Ensure the chat belongs to the logged-in user
-  const chat = await getChatById(chatId);
-  if (!chat || chat.userId !== session.user.id) {
-    return NextResponse.json({ error: "Not found or access denied" }, { status: 404 });
-  }
-
-  const messages = await getMessagesByChatId(chatId);
-  return NextResponse.json({ messages });
-}
-
-// Fetch all chat sessions for the logged-in user
-export async function GET_ALL_CHATS(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const chats = await getChatsByUser(session.user.id);
-    return NextResponse.json({ chats });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to fetch chat sessions." }, { status: 500 });
+  if (chatId) {
+    // Fetch messages for a chat
+    const chat = await getChatById(chatId);
+    if (!chat || chat.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found or access denied" }, { status: 404 });
+    }
+    const messages = await getMessagesByChatId(chatId);
+    console.log("Fetched messages:", messages);
+    return NextResponse.json({ messages });
+  } else {
+    // Fetch all chats for the user
+    try {
+      const chats = await getChatsByUser(session.user.id);
+      return NextResponse.json({ chats });
+    } catch (error) {
+      console.error(error);
+      return NextResponse.json({ error: "Failed to fetch chat sessions." }, { status: 500 });
+    }
   }
 }
+
 // Delete all chats for the logged-in user
 export async function DELETE(req: Request) {
   const session = await auth();
