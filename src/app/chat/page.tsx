@@ -1,89 +1,68 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import ChatInterface from "@/components/chat/ChatInterface";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Sparkles, LogIn } from "lucide-react";
 
 export default function ChatPage() {
-  const [chats, setChats] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState("");
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+    const { data: session, status } = useSession();
+    const router = useRouter();
 
-  // Fetch all chat sessions for user
-  useEffect(() => {
-    fetch("/api/chat/all-chats")
-      .then(res => res.json())
-      .then(data => setChats(data.chats || []));
-  }, []);
+    useEffect(() => {
+        // Redirect to home if not authenticated
+        if (status === "unauthenticated") {
+            router.push("/");
+        }
+    }, [status, router]);
 
-  // Fetch messages for selected chat
-  useEffect(() => {
-    if (!selectedChat) return;
-    fetch(`/api/chat?chatId=${selectedChat}`)
-      .then(res => res.json())
-      .then(data => setMessages(data.messages || []));
-  }, [selectedChat]);
-
-  // Send a message
-  const sendMessage = async () => {
-    if (!input) return;
-    setLoading(true);
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [...messages, { role: "user", content: input }],
-        provider: "openai", // or "claude", "gemini"
-        chatId: selectedChat,
-      }),
-    });
-    const data = await res.json();
-    setInput("");
-    setSelectedChat(data.chatId);
-    // Refetch messages
-    fetch(`/api/chat?chatId=${data.chatId}`)
-      .then(res => res.json())
-      .then(data => setMessages(data.messages || []));
-    setLoading(false);
-  };
-
-  return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* Chat list */}
-      <div style={{ width: 250, borderRight: "1px solid #ccc", padding: 16 }}>
-        <h3>Chats</h3>
-        <ul>
-          {chats.map(chat => (
-            <li key={chat.id}>
-              <button onClick={() => setSelectedChat(chat.id)}>
-                {chat.title || "Untitled"}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <button onClick={() => setSelectedChat(null)}>+ New Chat</button>
-      </div>
-      {/* Chat window */}
-      <div style={{ flex: 1, padding: 16, display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, overflowY: "auto", marginBottom: 16 }}>
-          {messages.map((msg, idx) => (
-            <div key={idx} style={{ margin: "8px 0" }}>
-              <b>{msg.role}:</b> {msg.content}
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/10">
+                        <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
+                    </div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                    <p className="text-slate-400">Loading your chat...</p>
+                </div>
             </div>
-          ))}
-        </div>
-        <div style={{ display: "flex" }}>
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            style={{ flex: 1, marginRight: 8 }}
-            disabled={loading}
-            placeholder="Type your message..."
-          />
-          <button onClick={sendMessage} disabled={loading || !input}>
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+        );
+    }
+
+    if (status === "unauthenticated") {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <Card className="w-full max-w-md bg-slate-900/50 border-slate-700 backdrop-blur-sm">
+                    <CardContent className="p-8 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/10">
+                            <Sparkles className="w-8 h-8 text-blue-400" />
+                        </div>
+
+                        <h1 className="text-2xl font-bold text-slate-100 mb-2">
+                            Authentication Required
+                        </h1>
+
+                        <p className="text-slate-400 mb-6">
+                            Please sign in to access the chat interface and
+                            start conversations with AI assistants.
+                        </p>
+
+                        <Button
+                            onClick={() => router.push("/")}
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                            <LogIn className="w-4 h-4 mr-2" />
+                            Sign In
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    return <ChatInterface />;
 }
