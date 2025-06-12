@@ -16,15 +16,23 @@
     "@langchain/core": "^0.3.57",
     "@langchain/google-genai": "^0.2.10",
     "@langchain/openai": "^0.5.12",
+    "@next/font": "^14.2.15",
     "@prisma/client": "^6.9.0",
+    "@radix-ui/react-scroll-area": "^1.2.9",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-slot": "^1.2.3",
     "chromadb": "^3.0.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "langchain": "^0.3.27",
+    "lucide-react": "^0.514.0",
     "next": "15.3.3",
     "next-auth": "^5.0.0-beta.28",
     "openai": "^5.3.0",
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -36,6 +44,7 @@
     "eslint-config-next": "15.3.3",
     "prisma": "^6.9.0",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }
 }
