@@ -19,9 +19,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // Always redirect to /chat after sign-in
     return "/chat";
   },
+   async session({ session, user, token }) {
+      // Add user id to session
+      if (session.user && user?.id) {
+        session.user.id = user.id;
+      } else if (session.user && token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
   },
   pages: {
-    signIn: "/signin",
+    signIn: "/",
     signOut: "/signout",
     error: "/error", // Error code passed in query string as ?error=
     verifyRequest: "/verify-request", // (used for check email message)

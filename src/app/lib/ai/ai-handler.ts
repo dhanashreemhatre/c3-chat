@@ -48,7 +48,7 @@ export class AIHandler {
       case "gemini":
         this.chatModel = new ChatGoogleGenerativeAI({
           apiKey: apiKey || process.env.GOOGLE_API_KEY!,
-          model: modelName || "gemini-1.5-pro-latest",
+          model: modelName || "gemini-2.0-flash-lite",
           temperature: temperature ?? 0.5,
         });
         break;
