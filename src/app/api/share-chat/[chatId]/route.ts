@@ -3,12 +3,17 @@ import { shareChat } from "@/app/lib/db/chats";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> },
 ) {
   try {
-    const chat = await shareChat(params.chatId);
+    const { chatId } = await params;
+    const chat = await shareChat(chatId);
     return NextResponse.json({ shareToken: chat.shareToken });
-  } catch (e) {
-    return NextResponse.json({ error: "Unable to share chat" }, { status: 500 });
+  } catch (error) {
+    console.error("Error sharing chat:", error);
+    return NextResponse.json(
+      { error: "Unable to share chat" },
+      { status: 500 },
+    );
   }
 }

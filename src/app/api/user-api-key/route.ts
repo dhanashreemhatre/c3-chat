@@ -9,12 +9,20 @@ export async function POST(req: Request) {
   }
   const { apiKey, provider } = await req.json();
   if (!apiKey || !provider) {
-    return NextResponse.json({ error: "Missing key or provider" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing key or provider" },
+      { status: 400 },
+    );
   }
   // Store encrypted in production!
   await prisma.userApiKey.upsert({
-    where: { userId: session.user.id },
-    update: { apiKey, provider },
+    where: {
+      userId_provider: {
+        userId: session.user.id,
+        provider: provider,
+      },
+    },
+    update: { apiKey },
     create: { userId: session.user.id, apiKey, provider },
   });
   return NextResponse.json({ success: true });

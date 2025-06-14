@@ -1,9 +1,15 @@
-import { Message } from '../types/chat';
+import { Message } from "../types/chat";
+
+export interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
 
 export interface ChatResponse {
   reply: string;
   chatId: string;
-  searchResults?: any;
+  searchResults?: SearchResult[];
 }
 
 export interface Chat {
@@ -19,7 +25,7 @@ export interface Chat {
 export interface ChatMessage {
   id: string;
   chatId: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   provider: string;
   createdAt: string;
@@ -27,16 +33,22 @@ export interface ChatMessage {
 interface SendMessageParams {
   messages: Message[];
   modelId: string;
-  provider: string;  // We'll still take this but override it with the correct value
+  provider: string; // We'll still take this but override it with the correct value
   chatId?: string;
   title?: string;
   search?: boolean;
 }
 
+interface Citation {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
 interface SendMessageResponse {
   reply: string;
   chatId: string;
-  citations?: any[];
+  citations?: Citation[];
 }
 
 export interface CreateChatRequest {
@@ -69,15 +81,15 @@ export class ChatService {
     // console.log(`Using model: ${actualModelName}, provider: ${normalizedProvider}`);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: params.messages.map(msg => ({
+          messages: params.messages.map((msg) => ({
             role: msg.role,
-            content: msg.content
+            content: msg.content,
           })),
           model: params.modelId, // Use the mapped model name
           provider: params.provider, // Use the normalized provider
@@ -106,7 +118,9 @@ export class ChatService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
     }
 
     const data = await response.json();
@@ -117,11 +131,13 @@ export class ChatService {
    * Get all user chats
    */
   async getUserChats(): Promise<Chat[]> {
-    const response = await fetch('/api/chat');
+    const response = await fetch("/api/chat");
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
     }
 
     const data = await response.json();
@@ -133,12 +149,14 @@ export class ChatService {
    */
   async deleteChat(chatId: string): Promise<boolean> {
     const response = await fetch(`/api/chat/${chatId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
     }
 
     const data = await response.json();
@@ -149,13 +167,15 @@ export class ChatService {
    * Delete all user chats
    */
   async deleteAllChats(): Promise<boolean> {
-    const response = await fetch('/api/chat', {
-      method: 'DELETE',
+    const response = await fetch("/api/chat", {
+      method: "DELETE",
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
     }
 
     const data = await response.json();
@@ -167,12 +187,12 @@ export class ChatService {
    */
   async shareChat(chatId: string): Promise<string> {
     const response = await fetch(`/api/share-chat/${chatId}`, {
-      method: 'POST',
+      method: "POST",
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Unable to share chat');
+      throw new Error(errorData.error || "Unable to share chat");
     }
 
     const data = await response.json();
@@ -187,7 +207,7 @@ export class ChatService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Chat not found');
+      throw new Error(errorData.error || "Chat not found");
     }
 
     const data = await response.json();
@@ -198,10 +218,10 @@ export class ChatService {
    * Save user API key
    */
   async saveUserApiKey(apiKey: string, provider: string): Promise<boolean> {
-    const response = await fetch('/api/user-api-key', {
-      method: 'POST',
+    const response = await fetch("/api/user-api-key", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         apiKey,
@@ -211,7 +231,7 @@ export class ChatService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to save API key');
+      throw new Error(errorData.error || "Failed to save API key");
     }
 
     const data = await response.json();
@@ -223,16 +243,16 @@ export class ChatService {
    */
   async uploadFile(file: File): Promise<boolean> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await fetch('/api/upload', {
-      method: 'POST',
+    const response = await fetch("/api/upload", {
+      method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'File upload failed');
+      throw new Error(errorData.error || "File upload failed");
     }
 
     const data = await response.json();

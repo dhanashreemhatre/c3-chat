@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,115 +29,121 @@ interface FileUploadProps {
   isOpen: boolean;
   onCloseAction: () => void;
   onFileUploaded?: (file: UploadedFile) => void;
+  maxSize?: number;
 }
 
 export default function FileUpload({
   isOpen,
   onCloseAction,
   onFileUploaded,
+  maxSize = 10 * 1024 * 1024, // 10MB default
 }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const acceptedTypes = [
-    ".pdf",
-    ".txt",
-    ".doc",
-    ".docx",
-    ".md",
-    ".csv",
-    ".json",
-  ];
+  const acceptedTypes = useMemo(
+    () => [".pdf", ".txt", ".doc", ".docx", ".md", ".csv", ".json"],
+    [],
+  );
 
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      if (file.size > maxSize) {
+        return `File too large. Maximum size is ${formatFileSize(maxSize)}`;
+      }
 
-  const validateFile = (file: File): string | null => {
-    if (file.size > maxFileSize) {
-      return "File size must be less than 10MB";
-    }
+      const extension = "." + file.name.split(".").pop()?.toLowerCase();
+      if (!acceptedTypes.includes(extension)) {
+        return `File type not supported. Accepted types: ${acceptedTypes.join(", ")}`;
+      }
 
-    const extension = "." + file.name.split(".").pop()?.toLowerCase();
-    if (!acceptedTypes.includes(extension)) {
-      return `File type not supported. Accepted types: ${acceptedTypes.join(", ")}`;
-    }
-
-    return null;
-  };
+      return null;
+    },
+    [acceptedTypes, maxSize],
+  );
 
   const generateFileId = (): string => {
     return Math.random().toString(36).substr(2, 9);
   };
 
-  const handleFileUpload = async (files: FileList) => {
-    setError(null);
-    const filesToUpload = Array.from(files);
+  const handleFileUpload = useCallback(
+    async (files: FileList) => {
+      setError(null);
+      const filesToUpload = Array.from(files);
 
-    for (const file of filesToUpload) {
-      const validationError = validateFile(file);
-      if (validationError) {
-        setError(validationError);
-        continue;
-      }
-
-      const fileId = generateFileId();
-      const uploadedFile: UploadedFile = {
-        id: fileId,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadedAt: new Date(),
-        status: "uploading",
-      };
-
-      setUploadedFiles((prev) => [...prev, uploadedFile]);
-
-      try {
-        // Update status to processing
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId ? { ...f, status: "processing" } : f,
-          ),
-        );
-
-        // Upload file (currently disabled in the API)
-        // const success = await chatService.uploadFile(file);
-
-        // Simulate upload process for now
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const success = true; // Simulate success
-
-        if (success) {
-          setUploadedFiles((prev) =>
-            prev.map((f) => (f.id === fileId ? { ...f, status: "ready" } : f)),
-          );
-          onFileUploaded?.(uploadedFile);
-        } else {
-          throw new Error("Upload failed");
+      for (const file of filesToUpload) {
+        const validationError = validateFile(file);
+        if (validationError) {
+          setError(validationError);
+          continue;
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Upload failed";
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? { ...f, status: "error", error: errorMessage }
-              : f,
-          ),
-        );
+
+        const fileId = generateFileId();
+        const uploadedFile: UploadedFile = {
+          id: fileId,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date(),
+          status: "uploading",
+        };
+
+        setUploadedFiles((prev) => [...prev, uploadedFile]);
+
+        try {
+          // Update status to processing
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId ? { ...f, status: "processing" } : f,
+            ),
+          );
+
+          // Upload file (currently disabled in the API)
+          // const success = await chatService.uploadFile(file);
+
+          // Simulate upload process for now
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const success = true; // Simulate success
+
+          if (success) {
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileId ? { ...f, status: "ready" } : f,
+              ),
+            );
+            onFileUploaded?.(uploadedFile);
+          } else {
+            throw new Error("Upload failed");
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Upload failed";
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId
+                ? { ...f, status: "error", error: errorMessage }
+                : f,
+            ),
+          );
+        }
       }
-    }
-  };
+    },
+    [onFileUploaded, validateFile],
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
 
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileUpload(files);
-    }
-  }, []);
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileUpload(files);
+      }
+    },
+    [handleFileUpload],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -308,7 +314,7 @@ export default function FileUpload({
 
               <div className="mt-4 text-xs text-slate-500">
                 <p>Supported formats: {acceptedTypes.join(", ")}</p>
-                <p>Maximum file size: {formatFileSize(maxFileSize)}</p>
+                <p>Maximum file size: {formatFileSize(maxSize)}</p>
               </div>
             </div>
           </div>
