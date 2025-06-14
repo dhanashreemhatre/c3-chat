@@ -16,7 +16,8 @@ import {
     AlertCircle,
     Key,
     Share2,
-    LogOut
+    LogOut,
+    Settings // Import Settings icon
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -27,6 +28,7 @@ import ModelSelector from "../ModelSelector";
 import ChatSidebar from "../ChatSidebar";
 import ApiKeyManager from "../ApiKeyManager";
 import FileUpload from "../FileUpload";
+import SettingsModal from "../SettingsModal"; // Import SettingsModal
 import { useChatContext } from "../../contexts/ChatContext";
 
 export default function ChatInterface() {
@@ -37,6 +39,7 @@ export default function ChatInterface() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showApiKeyManager, setShowApiKeyManager] = useState(false);
     const [showFileUpload, setShowFileUpload] = useState(false);
+    const [showSettings, setShowSettings] = useState(false); // New state for settings modal
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [shareToken, setShareToken] = useState<string | null>(null);
 
@@ -305,6 +308,17 @@ export default function ChatInterface() {
                                     >
                                         <LogOut className="w-4 h-4" />
                                     </Button>
+
+                                    {/* Settings Button */}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setShowSettings(true)}
+                                        className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                                        title="Settings"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -343,17 +357,29 @@ export default function ChatInterface() {
                             <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
                                 <div className="p-4 sm:p-6 space-y-4">
                                     {state.messages.length === 0 ? (
-                                        <EmptyState
-                                            currentModel={currentModel}
-                                            onStartChat={() =>
-                                                inputRef.current?.focus()
-                                            }
-                                            searchEnabled={state.searchEnabled}
-                                            onSuggestionClick={(suggestion) => {
-                                                setInputValue(suggestion);
-                                                inputRef.current?.focus();
-                                            }}
-                                        />
+                                        // Show loading screen when loading a specific chat, empty state otherwise
+                                        state.isLoading && state.currentChatId ? (
+                                            <div className="flex items-center justify-center h-full">
+                                                <div className="flex flex-col items-center space-y-4">
+                                                    <div className="flex space-x-1">
+                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"></div>
+                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                    </div>
+                                                    <span className="text-slate-400 text-sm">Loading chat...</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <EmptyState
+                                                currentModel={currentModel}
+                                                onStartChat={() => inputRef.current?.focus()}
+                                                searchEnabled={state.searchEnabled}
+                                                onSuggestionClick={(suggestion) => {
+                                                    setInputValue(suggestion);
+                                                    inputRef.current?.focus();
+                                                }}
+                                            />
+                                        )
                                     ) : (
                                         <div className="space-y-6">
                                             {state.messages.map((message, index) => (
@@ -438,6 +464,11 @@ export default function ChatInterface() {
             <ApiKeyManager
                 isOpen={showApiKeyManager}
                 onClose={() => setShowApiKeyManager(false)}
+            />
+
+            <SettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
             />
 
             <FileUpload

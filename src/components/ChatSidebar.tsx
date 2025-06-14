@@ -163,7 +163,7 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
                                 Chat History
                             </CardTitle>
                             <div className="flex items-center gap-2">
-                                <Button
+                                {/* <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() =>
@@ -172,7 +172,7 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
                                     className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
                                 >
                                     <Settings className="w-4 h-4" />
-                                </Button>
+                                </Button> */}
                                 <Button
                                     variant="ghost"
                                     size="icon"
