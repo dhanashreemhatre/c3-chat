@@ -10,7 +10,7 @@ import React, {
 import { Message } from "../types/chat";
 import { chatService, Chat } from "../services/chatService";
 import { modelService } from "../services/modelService";
-import { stat } from "fs";
+// import { stat } from "fs";
 
 export interface ChatState {
     // Current chat
@@ -258,7 +258,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "SET_ERROR", payload: null });
 
         try {
-            let chatId = state.currentChatId;
+            const chatId = state.currentChatId;
 
             // 3. Make API call - Build messages array correctly
             const cleanedModelId = state.selectedModel.replace("models/", "");

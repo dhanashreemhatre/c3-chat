@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import prisma from "@/app/lib/db/db"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import prisma from "@/app/lib/db/db";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -24,7 +24,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
-    async jwt({ user, token, account }) {
+    async jwt({ user, token }) {
       if (user) {
         token.uid = user.id;
       }
@@ -42,10 +42,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   jwt: {
-    // Much more aggressive tolerance settings
-    maxTokenAge: 7 * 24 * 60 * 60, // 7 days
     // Increase the clock tolerance for JWT verification
-    clockTolerance: 24 * 60 * 60, // 24 hours (in seconds)
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   pages: {
     signIn: "/",
