@@ -1,23 +1,147 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/app/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getUserApiKeys } from "@/services/userService";
 
-// Define model information with their providers
-const availableModels = [
-    { id: "gpt-4o", name: "GPT-4o", provider: "openai", description: "Latest multimodal model from OpenAI" },
-    { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider: "openai", description: "Fast and powerful language model" },
-    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider: "openai", description: "Efficient language model" },
-    { id: "claude-3-opus", name: "Claude 3 Opus", provider: "anthropic", description: "Anthropic's most powerful model" },
-    { id: "claude-3-sonnet", name: "Claude 3 Sonnet", provider: "anthropic", description: "Balanced performance and speed" },
-    { id: "claude-instant", name: "Claude Instant", provider: "anthropic", description: "Fast and efficient responses" },
-    { id: "gemini-pro", name: "Gemini Pro", provider: "google", description: "Google's multimodal AI model" },
-    { id: "gemini-flash", name: "Gemini Flash", provider: "google", description: "Google's fastest AI model" },
-];
+type ModelInfo = {
+    provider: string;
+    id: string;
+    name: string;
+    description: string;
+    keySource: "user" | "server";
+};
 
-export async function GET() {
-    const session = await auth();
-    if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+async function fetchOpenAIModels(apiKey: string): Promise<ModelInfo[]> {
+    const res = await fetch("https://api.openai.com/v1/models", {
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch OpenAI models");
+    const data = await res.json();
+
+    return data.data.map((model: any) => ({
+        provider: "openai",
+        id: model.id,
+        name: model.id,
+        description: `Owned by: ${model.owned_by || "unknown"}`,
+        keySource: "server", // Will be updated later
+    }));
+}
+
+function getAnthropicModels(): ModelInfo[] {
+    const models = [
+        {
+            id: "claude-3-opus-20240229",
+            name: "Claude 3 Opus",
+            description: "Highest quality Claude model",
+        },
+        {
+            id: "claude-3-sonnet-20240229",
+            name: "Claude 3 Sonnet",
+            description: "Fast and balanced Claude model",
+        },
+        {
+            id: "claude-3-haiku-20240307",
+            name: "Claude 3 Haiku",
+            description: "Smallest, fastest Claude model",
+        },
+    ];
+
+    return models.map((m) => ({
+        provider: "anthropic",
+        ...m,
+        keySource: "server", // Will be updated later
+    }));
+}
+
+async function fetchMistralModels(apiKey: string): Promise<ModelInfo[]> {
+    const res = await fetch("https://api.mistral.ai/v1/models", {
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch Mistral models");
+    const data = await res.json();
+
+    return data.data.map((model: any) => ({
+        provider: "mistral",
+        id: model.id,
+        name: model.id,
+        description: model.description || "",
+        keySource: "server", // Will be updated later
+    }));
+}
+
+async function fetchGoogleGeminiModels(apiKey: string): Promise<ModelInfo[]> {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+        headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+        },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch Gemini models");
+    const data = await res.json();
+
+    return data.models.map((model: any) => ({
+        provider: "google",
+        id: model.name,
+        name: model.displayName || model.name,
+        description: model.description || "",
+        keySource: "server", // Will be updated later
+    }));
+}
+
+async function fetchAllAvailableModels(userApiKeys: Record<string, string>): Promise<ModelInfo[]> {
+    const providers = ["openai", "anthropic", "mistral", "google"];
+    const allModels: ModelInfo[] = [];
+
+    for (const provider of providers) {
+        const userKey = userApiKeys[provider];
+        const serverKey = process.env[`${provider.toUpperCase()}_API_KEY`];
+
+        try {
+            if (provider === "openai" && (userKey || serverKey)) {
+                const models = await fetchOpenAIModels(userKey || serverKey);
+                allModels.push(...models.map(m => ({ ...m, keySource: userKey ? "user" : "server" })));
+            }
+
+            if (provider === "anthropic" && (userKey || serverKey)) {
+                const models = getAnthropicModels();
+                allModels.push(...models.map(m => ({ ...m, keySource: userKey ? "user" : "server" })));
+            }
+
+            if (provider === "mistral" && (userKey || serverKey)) {
+                const models = await fetchMistralModels(userKey || serverKey);
+                allModels.push(...models.map(m => ({ ...m, keySource: userKey ? "user" : "server" })));
+            }
+
+            if (provider === "google" && (userKey || serverKey)) {
+                const models = await fetchGoogleGeminiModels(userKey || serverKey);
+                allModels.push(...models.map(m => ({ ...m, keySource: userKey ? "user" : "server" })));
+            }
+        } catch (err) {
+            console.error(`Error fetching models from ${provider}:`, err);
+        }
     }
 
-    return NextResponse.json({ models: availableModels });
+    return allModels;
+}
+
+export async function GET(request: NextRequest) {
+    try {
+        const userId = request.headers.get("user-id") || null;
+        const userApiKeys = userId ? await getUserApiKeys(userId) : {};
+
+        const models = await fetchAllAvailableModels(userApiKeys);
+
+        return NextResponse.json({ models });
+    } catch (error) {
+        console.error("Error fetching models:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch models" },
+            { status: 500 }
+        );
+    }
 }

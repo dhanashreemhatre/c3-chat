@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import { Message } from "../types/chat";
 import { chatService, Chat } from "../services/chatService";
+import { modelService } from "../services/modelService";
+import { stat } from "fs";
 
 export interface ChatState {
     // Current chat
@@ -29,6 +31,10 @@ export interface ChatState {
 
     // User settings
     userApiKeys: Record<string, string>;
+
+    // Model management
+    availableModels: (ChatModel & { keySource: "user" | "server" })[];
+    isLoadingModels: boolean;
 }
 
 export type ChatAction =
@@ -44,11 +50,16 @@ export type ChatAction =
     | { type: "SET_SEARCH_ENABLED"; payload: boolean }
     | { type: "SET_ERROR"; payload: string | null }
     | {
-          type: "SET_USER_API_KEY";
-          payload: { provider: string; apiKey: string };
-      }
+        type: "SET_USER_API_KEY";
+        payload: { provider: string; apiKey: string };
+    }
     | { type: "CLEAR_MESSAGES" }
-    | { type: "RESET_STATE" };
+    | { type: "RESET_STATE" }
+    | {
+        type: "SET_AVAILABLE_MODELS";
+        payload: (ChatModel & { keySource: "user" | "server" })[];
+    }
+    | { type: "SET_LOADING_MODELS"; payload: boolean };
 
 const initialState: ChatState = {
     currentChatId: null,
@@ -60,6 +71,8 @@ const initialState: ChatState = {
     searchEnabled: false,
     error: null,
     userApiKeys: {},
+    availableModels: [],
+    isLoadingModels: false,
 };
 
 function chatReducer(state: ChatState, action: ChatAction): ChatState {
@@ -158,6 +171,18 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         case "RESET_STATE":
             return initialState;
 
+        case "SET_AVAILABLE_MODELS":
+            return {
+                ...state,
+                availableModels: action.payload,
+            };
+
+        case "SET_LOADING_MODELS":
+            return {
+                ...state,
+                isLoadingModels: action.payload,
+            };
+
         default:
             return state;
     }
@@ -181,6 +206,9 @@ interface ChatContextType {
 
     // User settings
     saveApiKey: (provider: string, apiKey: string) => Promise<void>;
+
+    // Model management
+    loadAvailableModels: () => Promise<void>;
 
     // Utility functions
     generateId: () => string;
@@ -211,9 +239,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "SET_ERROR", payload: null });
 
         try {
+            console.log("Sending message:", state.selectedModel, content);
+            const cleanedModelId = state.selectedModel.replace("models/", "");
+            const params = modelService.getModelRequestParams(state.selectedModel);
+            console.log("Sending message with params:", params);
             const response = await chatService.sendMessage({
                 messages: [...state.messages, userMessage],
-                provider: state.selectedModel,
+                modelId: cleanedModelId,
+                provider: (await params).normalizedProvider,
                 chatId: state.currentChatId || undefined,
                 title: title || undefined,
                 search: state.searchEnabled,
@@ -347,11 +380,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         apiKey: string,
     ): Promise<void> => {
         try {
-            await chatService.saveUserApiKey(apiKey, provider);
+            await modelService.updateApiKey(provider, apiKey);
             dispatch({
                 type: "SET_USER_API_KEY",
                 payload: { provider, apiKey },
             });
+
+            // Reload available models after updating the API key
+            await loadAvailableModels();
         } catch (error) {
             const errorMessage =
                 error instanceof Error
@@ -362,9 +398,37 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Load user chats on mount
+    const loadAvailableModels = async (): Promise<void> => {
+        dispatch({ type: "SET_LOADING_MODELS", payload: true });
+
+        try {
+            const { models } = await modelService.getAvailableModels();
+            dispatch({ type: "SET_AVAILABLE_MODELS", payload: models });
+
+            // If user has no model selected or selected model is not available,
+            // select the first available model
+            if (
+                models.length > 0 &&
+                (!state.selectedModel ||
+                    !models.some((m) => m.id === state.selectedModel))
+            ) {
+                dispatch({ type: "SET_SELECTED_MODEL", payload: models[0].id });
+            }
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to load available models";
+            dispatch({ type: "SET_ERROR", payload: errorMessage });
+        } finally {
+            dispatch({ type: "SET_LOADING_MODELS", payload: false });
+        }
+    };
+
+    // Load user chats and available models on mount
     useEffect(() => {
         loadUserChats();
+        loadAvailableModels();
     }, []);
 
     const value: ChatContextType = {
@@ -379,6 +443,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         loadUserChats,
         switchToChat,
         saveApiKey,
+        loadAvailableModels,
         generateId,
     };
 

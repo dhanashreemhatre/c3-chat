@@ -22,8 +22,8 @@ export async function POST(req: Request) {
 
     const {
         messages,
+        model,
         provider,
-        modelId,
         chatId,
         title,
         search = false,
@@ -103,14 +103,17 @@ export async function POST(req: Request) {
         }
     }
 
-    // Pass userApiKey?.apiKey to your AIHandler if present
+    // Initialize AI handler with the pre-mapped values
+    console.log(`Initializing AI handler with ${provider}/${model}`);
     const aiHandler = new AIHandler({
-        provider: provider as SupportedModels,
-        model: modelId,
+        provider,
+        model,
         apiKey: userApiKey?.apiKey, // Use user's key if present
     });
 
     try {
+        // Process the chat request
+        console.log("Processing chat with AI handler");
         const reply = await aiHandler.chat(messagesForLLM);
 
         // Save AI reply

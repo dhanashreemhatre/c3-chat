@@ -8,6 +8,12 @@ export const CHAT_MODELS: ChatModel[] = [
         description: "Fast and efficient AI model with multimodal capabilities",
     },
     {
+        id: "gemini-1.5-flash", // Updated to match Google's naming
+        name: "Gemini 1.5 Flash",
+        provider: "Google",
+        description: "Fast and efficient AI model",
+    },
+    {
         id: "gpt-4-turbo",
         name: "GPT-4 Turbo",
         provider: "OpenAI",

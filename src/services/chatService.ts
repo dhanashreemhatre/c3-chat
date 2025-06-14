@@ -1,4 +1,5 @@
 import { Message } from '../types/chat';
+import { modelService } from './modelService';
 
 export interface ChatResponse {
   reply: string;
@@ -24,10 +25,25 @@ export interface ChatMessage {
   provider: string;
   createdAt: string;
 }
+interface SendMessageParams {
+  messages: Message[];
+  modelId: string;
+  provider: string;  // We'll still take this but override it with the correct value
+  chatId?: string;
+  title?: string;
+  search?: boolean;
+}
+
+interface SendMessageResponse {
+  reply: string;
+  chatId: string;
+  citations?: any[];
+}
 
 export interface CreateChatRequest {
   messages: Message[];
   provider: string;
+  modelId: string;
   chatId?: string;
   title?: string;
   search?: boolean;
@@ -46,23 +62,43 @@ export class ChatService {
   /**
    * Send a message and get AI response
    */
-  async sendMessage(request: CreateChatRequest): Promise<ChatResponse> {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
+  async sendMessage(params: SendMessageParams): Promise<SendMessageResponse> {
+    // Get the correct model name and provider
+    // console.log("Getting model parameters for:", params.modelId);
+    // const { actualModelName, normalizedProvider } = await modelService.getModelRequestParams(params.modelId);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    // console.log(`Using model: ${actualModelName}, provider: ${normalizedProvider}`);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: params.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          model: params.modelId, // Use the mapped model name
+          provider: params.provider, // Use the normalized provider
+          chatId: params.chatId,
+          title: params.title,
+          search: params.search,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error in sendMessage:", error);
+      throw error;
     }
-
-    return response.json();
   }
-
   /**
    * Get messages for a specific chat
    */
@@ -202,6 +238,21 @@ export class ChatService {
 
     const data = await response.json();
     return data.success;
+  }
+  async loadChatHistory(chatId: string): Promise<Message[]> {
+    try {
+      const response = await fetch(`/api/chat/${chatId}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to load chat history: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.messages;
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+      throw error;
+    }
   }
 }
 

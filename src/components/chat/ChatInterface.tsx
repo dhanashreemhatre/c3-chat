@@ -23,7 +23,7 @@ import { signOut } from "next-auth/react";
 import { CHAT_MODELS } from "../../constants/models";
 import { MessageBubble } from "../MessageBubble";
 import { LoadingIndicator } from "../LoadingIndicator";
-import { ModelSelector } from "../ModelSelector";
+import ModelSelector from "../ModelSelector";
 import ChatSidebar from "../ChatSidebar";
 import ApiKeyManager from "../ApiKeyManager";
 import FileUpload from "../FileUpload";
@@ -64,6 +64,7 @@ export default function ChatInterface() {
 
     // Handle sending messages
     const handleSendMessage = async () => {
+        console.log("handleSendMessage called with inputValue:", inputValue);
         if (!inputValue.trim() || state.isLoading) return;
 
         const content = inputValue.trim();
@@ -75,6 +76,7 @@ export default function ChatInterface() {
         setInputValue("");
 
         try {
+            console.log("Sending message:", content);
             await sendMessage(content, title);
         } catch (error) {
             console.error("Error sending message:", error);

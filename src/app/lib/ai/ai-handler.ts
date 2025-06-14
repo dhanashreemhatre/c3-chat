@@ -28,31 +28,38 @@ export class AIHandler {
     | ChatGoogleGenerativeAI;
 
   constructor(options: AIHandlerOptions) {
-    this.provider = options.provider;
+    this.provider = options.provider.toLowerCase();
     this.model = options.model;
     this.apiKey = options.apiKey;
 
+    console.log(`AI Handler initializing with provider: ${this.provider}, model: ${this.model}`);
+
+    // No need for mapping here since we're receiving already mapped values
+
     switch (this.provider) {
       case "openai":
+        console.log(`Using OpenAI model: ${this.model}`);
         this.chatModel = new ChatOpenAI({
           openAIApiKey: this.apiKey || process.env.OPENAI_API_KEY!,
-          modelName: this.model || "gpt-4o",
+          modelName: this.model,
           temperature: 0.5,
         });
         break;
 
       case "claude":
+        console.log(`Using Claude model: ${this.model}`);
         this.chatModel = new ChatAnthropic({
           anthropicApiKey: this.apiKey || process.env.ANTHROPIC_API_KEY!,
-          modelName: this.model || "claude-3-opus-20240229",
+          modelName: this.model,
           temperature: 0.5,
         });
         break;
 
-      case "gemini":
+      case "google":
+        console.log(`Using Google model: ${this.model}`);
         this.chatModel = new ChatGoogleGenerativeAI({
           apiKey: this.apiKey || process.env.GOOGLE_API_KEY!,
-          model: this.model || "gemini-2.0-flash-lite",
+          model: this.model,
           temperature: 0.5,
         });
         break;
