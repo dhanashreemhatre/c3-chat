@@ -39,6 +39,7 @@ export interface ChatState {
 
 export type ChatAction =
     | { type: "SET_CURRENT_CHAT"; payload: string | null }
+    | { type: "SET_CURRENT_CHAT_ID"; payload: string } // Add this new action
     | { type: "SET_MESSAGES"; payload: Message[] }
     | { type: "ADD_MESSAGE"; payload: Message }
     | { type: "SET_LOADING"; payload: boolean }
@@ -77,12 +78,25 @@ const initialState: ChatState = {
 };
 
 function chatReducer(state: ChatState, action: ChatAction): ChatState {
+    console.log("Reducer called with action:", action.type, action.payload);
+    console.log("Current state.messages.length:", state.messages.length);
+
     switch (action.type) {
         case "SET_CURRENT_CHAT":
+            console.log("SET_CURRENT_CHAT - clearing messages");
             return {
                 ...state,
                 currentChatId: action.payload,
                 messages: [], // Clear messages when switching chats
+                error: null,
+            };
+
+        case "SET_CURRENT_CHAT_ID":
+            console.log("SET_CURRENT_CHAT_ID - keeping messages");
+            // New action that sets chat ID without clearing messages
+            return {
+                ...state,
+                currentChatId: action.payload,
                 error: null,
             };
 
@@ -93,9 +107,12 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
             };
 
         case "ADD_MESSAGE":
+            console.log("ADD_MESSAGE - adding message:", action.payload);
+            const newMessages = [...state.messages, action.payload];
+            console.log("New messages array length:", newMessages.length);
             return {
                 ...state,
-                messages: [...state.messages, action.payload],
+                messages: newMessages,
             };
 
         case "SET_LOADING":
@@ -228,6 +245,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         content: string,
         title?: string,
     ): Promise<void> => {
+        // 1. Add user message immediately
         const userMessage: Message = {
             id: generateId(),
             content,
@@ -240,19 +258,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "SET_ERROR", payload: null });
 
         try {
-            console.log("Sending message:", state.selectedModel, content);
+            let chatId = state.currentChatId;
+
+            // 3. Make API call - Build messages array correctly
             const cleanedModelId = state.selectedModel.replace("models/", "");
             const params = modelService.getModelRequestParams(state.selectedModel);
-            console.log("Sending message with params:", params);
+
+            // Build the messages array for the API call
+            const messagesForApi = [...state.messages, userMessage];
+            console.log("Messages being sent to API:", messagesForApi);
+
             const response = await chatService.sendMessage({
-                messages: [...state.messages, userMessage],
+                messages: messagesForApi,
                 modelId: cleanedModelId,
                 provider: (await params).normalizedProvider,
-                chatId: state.currentChatId || undefined,
+                chatId: chatId || undefined,
                 title: title || undefined,
                 search: state.searchEnabled,
             });
 
+            console.log("API response:", response);
+
+            // 4. Add AI response
             const assistantMessage: Message = {
                 id: generateId(),
                 content: response.reply,
@@ -260,18 +287,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 timestamp: new Date(),
             };
 
+            console.log("Adding assistant message:", assistantMessage);
             dispatch({ type: "ADD_MESSAGE", payload: assistantMessage });
 
-            // Update current chat ID if it was a new chat
-            if (!state.currentChatId && response.chatId) {
+            // 5. Update current chat ID if it was a new chat (without clearing messages)
+            if (!chatId && response.chatId) {
+                console.log("Setting new chat ID:", response.chatId);
                 dispatch({
-                    type: "SET_CURRENT_CHAT",
+                    type: "SET_CURRENT_CHAT_ID",
                     payload: response.chatId,
                 });
                 // Reload chats to include the new one
                 loadUserChats();
             }
         } catch (error) {
+            console.error("Error in sendMessage:", error);
             const errorMessage =
                 error instanceof Error
                     ? error.message
