@@ -40,7 +40,7 @@ export const modelService = {
      */
     async updateApiKey(provider: string, apiKey: string): Promise<void> {
         try {
-            const response = await fetch('/api/user/keys', {
+            const response = await fetch('/api/user-api-key', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

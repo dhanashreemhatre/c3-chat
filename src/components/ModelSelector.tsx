@@ -29,8 +29,8 @@ export default function ModelSelector() {
     }
 
     return (
-        <div className="flex flex-col gap-2 p-4">
-            <label className="text-sm font-medium text-gray-700">Select Model</label>
+        <div className="flex gap-2  p-4">
+            {/* <label className="text-sm font-medium text-gray-700">Select Model</label> */}
             <div className="relative">
                 <Select
                     value={selectedModel}
@@ -70,8 +70,8 @@ export default function ModelSelector() {
                                         {model.keySource && (
                                             <span
                                                 className={`text-xs px-1.5 py-0.5 rounded ${model.keySource === "user"
-                                                        ? "bg-green-800 text-green-100"
-                                                        : "bg-blue-800 text-blue-100"
+                                                    ? "bg-green-800 text-green-100"
+                                                    : "bg-blue-800 text-blue-100"
                                                     }`}
                                             >
                                                 {model.keySource === "user"
@@ -100,12 +100,12 @@ export default function ModelSelector() {
                 </Select>
             </div>
 
-            <button
+            {/* <button
                 className="mt-2 text-xs text-blue-600 hover:text-blue-800"
                 onClick={() => loadAvailableModels()}
             >
                 Refresh models
-            </button>
+            </button> */}
         </div>
     );
 }

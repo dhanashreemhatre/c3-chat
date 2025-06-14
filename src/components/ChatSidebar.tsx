@@ -152,11 +152,8 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
 
             {/* Sidebar */}
             <div
-                className={`
-        fixed left-0 top-0 h-full w-80 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700 z-50 transform transition-transform duration-300 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        md:relative md:translate-x-0 md:z-auto
-      `}
+                className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+                    } md:relative md:translate-x-0 md:flex md:flex-col h-screen`}
             >
                 <Card className="h-full rounded-none bg-transparent border-0">
                     <CardHeader className="pb-4 border-b border-slate-700">
@@ -442,7 +439,7 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
                                                                     className="h-6 w-6 text-slate-400 hover:text-red-400 hover:bg-slate-700"
                                                                 >
                                                                     {isDeleting ===
-                                                                    chat.id ? (
+                                                                        chat.id ? (
                                                                         <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
                                                                     ) : (
                                                                         <Trash2 className="w-3 h-3" />

@@ -45,15 +45,29 @@ export default function ChatInterface() {
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
-        if (scrollAreaRef.current) {
-            const scrollContainer = scrollAreaRef.current.querySelector(
-                "[data-radix-scroll-area-viewport]",
-            );
-            if (scrollContainer) {
-                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        const scrollToBottom = () => {
+            if (scrollAreaRef.current) {
+                const scrollContainer = scrollAreaRef.current.querySelector(
+                    "[data-radix-scroll-area-viewport]",
+                ) as HTMLElement;
+
+                if (scrollContainer) {
+                    // Use setTimeout to ensure the DOM has updated
+                    setTimeout(() => {
+                        scrollContainer.scrollTo({
+                            top: scrollContainer.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
+                }
             }
+        };
+
+        // Scroll when messages change or loading state changes
+        if (state.messages.length > 0) {
+            scrollToBottom();
         }
-    }, [state.messages]);
+    }, [state.messages, state.isLoading]);
 
     // Focus input after loading
     useEffect(() => {
@@ -325,9 +339,9 @@ export default function ChatInterface() {
 
                     {/* Chat Messages */}
                     <Card className="flex-1 flex flex-col mx-2 sm:mx-4 lg:mx-6 mb-4 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
-                        <CardContent className="flex-1 p-0 flex flex-col">
-                            <ScrollArea className="flex-1" ref={scrollAreaRef}>
-                                <div className="p-4 sm:p-6">
+                        <CardContent className="flex-1 p-0 flex flex-col min-h-0">
+                            <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
+                                <div className="p-4 sm:p-6 space-y-4">
                                     {state.messages.length === 0 ? (
                                         <EmptyState
                                             currentModel={currentModel}
@@ -341,20 +355,33 @@ export default function ChatInterface() {
                                             }}
                                         />
                                     ) : (
-                                        <div className="space-y-2">
-                                            {state.messages.map((message) => (
-                                                <MessageBubble
-                                                    key={message.id}
-                                                    message={message}
-                                                    onCopy={handleCopyMessage}
-                                                    onReaction={
-                                                        handleMessageReaction
-                                                    }
-                                                    onShare={handleShareMessage}
-                                                />
+                                        <div className="space-y-6">
+                                            {state.messages.map((message, index) => (
+                                                <div key={message.id || index} className="w-full">
+                                                    <MessageBubble
+                                                        message={message}
+                                                        onCopy={handleCopyMessage}
+                                                        onReaction={handleMessageReaction}
+                                                        onShare={handleShareMessage}
+                                                        isCopied={copiedMessageId === message.id}
+                                                    />
+                                                </div>
                                             ))}
+
+                                            {/* Loading indicator */}
                                             {state.isLoading && (
-                                                <LoadingIndicator />
+                                                <div className="flex justify-start">
+                                                    <div className="bg-slate-800 rounded-2xl p-4 max-w-xs">
+                                                        <div className="flex items-center space-x-2">
+                                                            <div className="flex space-x-1">
+                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                            </div>
+                                                            <span className="text-slate-400 text-sm">Thinking...</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -362,7 +389,7 @@ export default function ChatInterface() {
                             </ScrollArea>
 
                             {/* Input Area */}
-                            <div className="p-4 sm:p-6 border-t border-slate-700 dark">
+                            <div className="p-4 sm:p-6 border-t border-slate-700 dark flex-shrink-0">
                                 <div className="flex gap-3 max-w-4xl mx-auto">
                                     <div className="flex-1 relative">
                                         <Input
