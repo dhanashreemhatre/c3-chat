@@ -1,27 +1,31 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
 generator client {
   provider = "prisma-client-js"
 }
-model User {
-  id             String   @id @default(uuid())
-  name           String?
-  email          String?  @unique
-  emailVerified  DateTime?
-  image          String?
-  accounts       Account[]
-  sessions       Session[]
-  chats          Chat[]
-  Authenticator Authenticator[]
-  freeChatCount  Int      @default(0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  chats         Chat[]
+  userApiKeys   UserApiKey[]
+  freeChatCount Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("users")
 }
 
 model Account {
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -33,86 +37,70 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  @@id([provider, providerAccountId])
-}
 
-model UserApiKey {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  apiKey    String   // Store encrypted!
-  provider  String   // e.g. "openai", "anthropic", etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
-  id           String   @id @default(uuid())
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@map("sessions")
 }
 
 model VerificationToken {
   identifier String
-  token      String
+  token      String   @unique
   expires    DateTime
- 
-  @@id([identifier, token])
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
 }
 
-// Optional for WebAuthn support
-model Authenticator {
-  credentialID         String  @unique
-  userId               String
-  providerAccountId    String
-  credentialPublicKey  String
-  counter              Int
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String?
- 
+model UserApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String
+  apiKey    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
-  @@id([userId, credentialID])
+
+  @@unique([userId, provider])
+  @@map("user_api_keys")
 }
 
 model Chat {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  messages  Message[]
-  is_deleted Boolean  @default(false)
+  id         String   @id @default(cuid())
+  title      String
+  userId     String
   shareToken String?  @unique
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@map("chats")
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  content    String
-  role       String   // 'user' | 'assistant'
-  chat       Chat     @relation(fields: [chatId], references: [id])
-  chatId     String
-  createdAt  DateTime @default(now())
-  modelUsed  String
-  files      File[]   // Relation to uploaded files
-}
+  id        String   @id @default(cuid())
+  chatId    String
+  role      String
+  content   String
+  provider  String
+  createdAt DateTime @default(now())
 
-model File {
-  id        String   @id @default(uuid())
-  url       String
-  message   Message  @relation(fields: [messageId], references: [id])
-  messageId String
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }

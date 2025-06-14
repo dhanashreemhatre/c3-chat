@@ -1,68 +1,56 @@
-
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
 import prisma from "@/app/lib/db/db"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
- 
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    adapter:PrismaAdapter(prisma),
-  providers: [Google],
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
   callbacks: {
-    // async redirect({ url, baseUrl }) {
-    //   // Allow relative callback URLs
-    //   if (url.startsWith("/")) return `${baseUrl}${url}`
-    //   // Prevent external redirects
-    //   if (new URL(url).origin !== baseUrl) return baseUrl
-    //   return url
-    // }
     async redirect({ url, baseUrl }) {
-    // Always redirect to /chat after sign-in
-    return "/chat";
-  },
-   async session({ session, user, token }) {
-      // Add user id to session
-      if (session.user && user?.id) {
-        session.user.id = user.id;
-      } else if (session.user && token?.sub) {
+      // Always redirect to /chat after sign-in
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/chat`;
+    },
+    async session({ session, token }) {
+      if (token?.sub && session?.user) {
         session.user.id = token.sub;
       }
       return session;
     },
-  },
-  pages: {
-    signIn: "/",
-    signOut: "/signout",
-    error: "/error", // Error code passed in query string as ?error=
-    verifyRequest: "/verify-request", // (used for check email message)
-    newUser: "/new-user" // Will disable the new account creation screen
+    async jwt({ user, token, account }) {
+      if (user) {
+        token.uid = user.id;
+      }
+
+      // Override JWT timestamps to handle system clock issues
+      // This will always set the token as freshly issued
+      token.iat = Math.floor(Date.now() / 1000) - 10;
+      token.exp = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+
+      return token;
+    },
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
-    // jwt: {
-    //   maxAge: 30 * 24 * 60 * 60, // 30 days
-    //   updateAge: 24 * 60 * 60, // 24 hours
-    // }
+  },
+  jwt: {
+    // Much more aggressive tolerance settings
+    maxTokenAge: 7 * 24 * 60 * 60, // 7 days
+    // Increase the clock tolerance for JWT verification
+    clockTolerance: 24 * 60 * 60, // 24 hours (in seconds)
+  },
+  pages: {
+    signIn: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,
-  theme: {
-    colorScheme: "light", // "auto" | "dark" | "light"
-    brandColor: "#000000", // Hex color code
-    logo: "/logo.png", // Absolute URL to the logo
-  },
-  events: {
-    async signIn(message) {
-      console.log("User signed in:", message.user);
-    },
-    async signOut(message) {
-      console.log("User signed out:", message);
-    },
-    async createUser(message) {
-      console.log("New user created:", message.user);
-    }
-  },
-  debug: process.env.NODE_ENV === "development", // Enable debug messages in development
-  trustHost: true, // Trust the host for redirects
-  
-})
+  debug: process.env.NODE_ENV === "development",
+  trustHost: true,
+});

@@ -13,48 +13,59 @@ export type ChatCompletionRequestMessage = {
 };
 
 interface AIHandlerOptions {
-  modelName?: string;
-  temperature?: number;
+  provider: string;
+  model: string;
   apiKey?: string;
-  provider: SupportedModels;
 }
 
 export class AIHandler {
+  private provider: string;
+  private model: string;
+  private apiKey?: string;
   private chatModel:
     | ChatOpenAI
     | ChatAnthropic
     | ChatGoogleGenerativeAI;
 
   constructor(options: AIHandlerOptions) {
-    const { provider, modelName, temperature, apiKey } = options;
+    this.provider = options.provider.toLowerCase();
+    this.model = options.model;
+    this.apiKey = options.apiKey;
 
-    switch (provider) {
+    console.log(`AI Handler initializing with provider: ${this.provider}, model: ${this.model}`);
+
+    // No need for mapping here since we're receiving already mapped values
+
+    switch (this.provider) {
       case "openai":
+        console.log(`Using OpenAI model: ${this.model}`);
         this.chatModel = new ChatOpenAI({
-          openAIApiKey: apiKey || process.env.OPENAI_API_KEY!,
-          modelName: modelName || "gpt-4o",
-          temperature: temperature ?? 0.5,
+          openAIApiKey: this.apiKey || process.env.OPENAI_API_KEY!,
+          modelName: this.model,
+          temperature: 0.5,
         });
         break;
 
       case "claude":
+        console.log(`Using Claude model: ${this.model}`);
         this.chatModel = new ChatAnthropic({
-          anthropicApiKey: apiKey || process.env.ANTHROPIC_API_KEY!,
-          modelName: modelName || "claude-3-opus-20240229",
-          temperature: temperature ?? 0.5,
+          anthropicApiKey: this.apiKey || process.env.ANTHROPIC_API_KEY!,
+          modelName: this.model,
+          temperature: 0.5,
         });
         break;
 
-      case "gemini":
+      case "google":
+        console.log(`Using Google model: ${this.model}`);
         this.chatModel = new ChatGoogleGenerativeAI({
-          apiKey: apiKey || process.env.GOOGLE_API_KEY!,
-          model: modelName || "gemini-2.0-flash-lite",
-          temperature: temperature ?? 0.5,
+          apiKey: this.apiKey || process.env.GOOGLE_API_KEY!,
+          model: this.model,
+          temperature: 0.5,
         });
         break;
 
       default:
-        throw new Error(`Provider "${provider}" not supported.`);
+        throw new Error(`Provider "${this.provider}" not supported.`);
     }
   }
 
