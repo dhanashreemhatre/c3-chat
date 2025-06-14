@@ -17,9 +17,9 @@ import { chatService, Chat } from "@/services/chatService";
 import { MessageBubble } from "@/components/MessageBubble";
 import { Message } from "@/types/chat";
 
-interface SharedChatPageProps {
-    params: { token: string };
-}
+// interface SharedChatPageProps {
+//     params: { token: string };
+// }
 
 export default function SharedChatPage() {
     const params = useParams();
@@ -31,13 +31,6 @@ export default function SharedChatPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copiedUrl, setCopiedUrl] = useState(false);
-
-    useEffect(() => {
-        if (token) {
-            loadSharedChat();
-        }
-    }, [token]);
-
     const loadSharedChat = async () => {
         try {
             setLoading(true);
@@ -69,6 +62,14 @@ export default function SharedChatPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (token) {
+            loadSharedChat();
+        }
+    }, [token, loadSharedChat]);
+
+
 
     const copyShareUrl = async () => {
         try {

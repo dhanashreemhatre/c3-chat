@@ -139,7 +139,7 @@ export default function FileUpload({
         if (files.length > 0) {
             handleFileUpload(files);
         }
-    }, []);
+    }, [handleFileUpload]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -270,11 +270,10 @@ export default function FileUpload({
                     <div
                         className={`
               relative border-2 border-dashed rounded-lg p-8 mb-6 transition-colors
-              ${
-                  isDragging
-                      ? "border-blue-400 bg-blue-900/20"
-                      : "border-slate-600 hover:border-slate-500"
-              }
+              ${isDragging
+                                ? "border-blue-400 bg-blue-900/20"
+                                : "border-slate-600 hover:border-slate-500"
+                            }
             `}
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
@@ -282,11 +281,10 @@ export default function FileUpload({
                     >
                         <div className="text-center">
                             <Upload
-                                className={`w-12 h-12 mx-auto mb-4 ${
-                                    isDragging
+                                className={`w-12 h-12 mx-auto mb-4 ${isDragging
                                         ? "text-blue-400"
                                         : "text-slate-400"
-                                }`}
+                                    }`}
                             />
 
                             <h3 className="text-lg font-semibold text-slate-200 mb-2">
@@ -367,13 +365,12 @@ export default function FileUpload({
                                     {uploadedFiles.map((file) => (
                                         <Card
                                             key={file.id}
-                                            className={`p-4 border transition-colors ${
-                                                file.status === "error"
+                                            className={`p-4 border transition-colors ${file.status === "error"
                                                     ? "bg-red-900/10 border-red-500/30"
                                                     : file.status === "ready"
-                                                      ? "bg-green-900/10 border-green-500/30"
-                                                      : "bg-slate-800/30 border-slate-700"
-                                            }`}
+                                                        ? "bg-green-900/10 border-green-500/30"
+                                                        : "bg-slate-800/30 border-slate-700"
+                                                }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -406,15 +403,14 @@ export default function FileUpload({
                                                             file.status,
                                                         )}
                                                         <span
-                                                            className={`text-sm font-medium ${
-                                                                file.status ===
-                                                                "error"
+                                                            className={`text-sm font-medium ${file.status ===
+                                                                    "error"
                                                                     ? "text-red-400"
                                                                     : file.status ===
                                                                         "ready"
-                                                                      ? "text-green-400"
-                                                                      : "text-blue-400"
-                                                            }`}
+                                                                        ? "text-green-400"
+                                                                        : "text-blue-400"
+                                                                }`}
                                                         >
                                                             {getStatusText(
                                                                 file.status,

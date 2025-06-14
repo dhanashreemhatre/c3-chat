@@ -11,14 +11,11 @@ import {
     Trash2,
     Share2,
     X,
-    Key,
-    Globe,
     AlertCircle,
     Search,
 } from "lucide-react";
 import { useChatContext } from "../contexts/ChatContext";
 import { Chat } from "../services/chatService";
-import { CHAT_MODELS } from "../constants/models";
 
 interface ChatSidebarProps {
     isOpen: boolean;
@@ -33,13 +30,13 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
         deleteAllChats,
         shareChat,
         switchToChat,
-        saveApiKey,
-        dispatch,
+        // saveApiKey,
+        // dispatch,
     } = useChatContext();
     const [searchQuery, setSearchQuery] = useState("");
-    const [showApiKeyForm, setShowApiKeyForm] = useState(false);
-    const [apiKeyProvider, setApiKeyProvider] = useState("");
-    const [apiKeyValue, setApiKeyValue] = useState("");
+    // const [showApiKeyForm, setShowApiKeyForm] = useState(false);
+    // const [apiKeyProvider, setApiKeyProvider] = useState("");
+    // const [apiKeyValue, setApiKeyValue] = useState("");
     const [shareToken, setShareToken] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -75,19 +72,19 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
         }
     };
 
-    const handleDeleteAllChats = async () => {
-        if (
-            confirm(
-                "Are you sure you want to delete all chats? This action cannot be undone.",
-            )
-        ) {
-            try {
-                await deleteAllChats();
-            } catch (error) {
-                console.error("Failed to delete all chats:", error);
-            }
-        }
-    };
+    // const handleDeleteAllChats = async () => {
+    //     if (
+    //         confirm(
+    //             "Are you sure you want to delete all chats? This action cannot be undone.",
+    //         )
+    //     ) {
+    //         try {
+    //             await deleteAllChats();
+    //         } catch (error) {
+    //             console.error("Failed to delete all chats:", error);
+    //         }
+    //     }
+    // };
 
     const handleShareChat = async (chatId: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -102,17 +99,17 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
         }
     };
 
-    const handleSaveApiKey = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await saveApiKey(apiKeyProvider, apiKeyValue);
-            setApiKeyValue("");
-            setApiKeyProvider("");
-            setShowApiKeyForm(false);
-        } catch (error) {
-            console.error("Failed to save API key:", error);
-        }
-    };
+    // const handleSaveApiKey = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     try {
+    //         await saveApiKey(apiKeyProvider, apiKeyValue);
+    //         setApiKeyValue("");
+    //         setApiKeyProvider("");
+    //         setShowApiKeyForm(false);
+    //     } catch (error) {
+    //         console.error("Failed to save API key:", error);
+    //     }
+    // };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);

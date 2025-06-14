@@ -6,13 +6,17 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
+    // SelectValue,
 } from "@/components/ui/select";
 
 export default function ModelSelector() {
     const { state, dispatch, loadAvailableModels } = useChatContext();
     const { availableModels, selectedModel, isLoadingModels } = state;
-
+    console.log("ModelSelector render", {
+        availableModels,
+        selectedModel,
+        loadAvailableModels
+    });
     // Find the currently selected model object
     const currentModel = availableModels.find((model) => model.id === selectedModel);
 
