@@ -12,7 +12,7 @@ export async function createChat(userId: string, title?: string) {
 
 export async function getChatsByUser(userId: string) {
   return prisma.chat.findMany({
-    where: { userId, is_deleted: false },
+    where: { userId, isDeleted: false },
     orderBy: { createdAt: "desc" },
     include: { messages: true },
   });
@@ -25,13 +25,18 @@ export async function getChatById(chatId: string) {
   });
 }
 
-export async function addMessage(chatId: string, role: string, content: string, modelUsed: string) {
+export async function addMessage(
+  chatId: string,
+  role: string,
+  content: string,
+  provider: string,
+) {
   return prisma.message.create({
     data: {
       chatId,
       role,
       content,
-      modelUsed,
+      provider,
     },
   });
 }
@@ -53,7 +58,7 @@ export async function deleteChat(chatId: string) {
 export async function softDeleteChat(chatId: string) {
   return prisma.chat.update({
     where: { id: chatId },
-    data: { updatedAt: new Date(), is_deleted: true },
+    data: { updatedAt: new Date(), isDeleted: true },
   });
 }
 
@@ -61,7 +66,7 @@ export async function softDeleteChat(chatId: string) {
 export async function softDeleteAllChatsForUser(userId: string) {
   return prisma.chat.updateMany({
     where: { userId },
-    data: { updatedAt: new Date(), is_deleted: true },
+    data: { updatedAt: new Date(), isDeleted: true },
   });
 }
 
