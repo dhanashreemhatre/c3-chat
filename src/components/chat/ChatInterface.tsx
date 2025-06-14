@@ -11,11 +11,14 @@ import {
     Sparkles,
     Menu,
     Globe,
+    GlobeLock, // Changed from GlobeLock
     Upload,
     AlertCircle,
     Key,
     Share2,
+    LogOut
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 import { CHAT_MODELS } from "../../constants/models";
 import { MessageBubble } from "../MessageBubble";
@@ -213,11 +216,10 @@ export default function ChatInterface() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={toggleSearch}
-                                        className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${
-                                            state.searchEnabled
-                                                ? "text-green-400"
-                                                : ""
-                                        }`}
+                                        className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${state.searchEnabled
+                                            ? "text-green-400"
+                                            : ""
+                                            }`}
                                         title={
                                             state.searchEnabled
                                                 ? "Disable Web Search"
@@ -227,7 +229,7 @@ export default function ChatInterface() {
                                         {state.searchEnabled ? (
                                             <Globe className="w-4 h-4" />
                                         ) : (
-                                            <GlobeOff className="w-4 h-4" />
+                                            <GlobeLock className="w-4 h-4" />
                                         )}
                                     </Button>
 
@@ -267,7 +269,7 @@ export default function ChatInterface() {
                                         }
                                     />
 
-                                    {/* New Chat Button */}
+                                    {/* New Chat Button
                                     <Button
                                         onClick={createNewChat}
                                         variant="outline"
@@ -275,6 +277,17 @@ export default function ChatInterface() {
                                         className="hidden sm:flex text-slate-200 border-slate-600 hover:bg-slate-700"
                                     >
                                         New Chat
+                                    </Button> */}
+
+                                    {/* Logout Button */}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => signOut({ callbackUrl: "/" })}
+                                        className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                                        title="Logout"
+                                    >
+                                        <LogOut className="w-4 h-4" />
                                     </Button>
                                 </div>
                             </div>

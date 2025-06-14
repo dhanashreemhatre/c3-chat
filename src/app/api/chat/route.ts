@@ -23,6 +23,7 @@ export async function POST(req: Request) {
     const {
         messages,
         provider,
+        modelId,
         chatId,
         title,
         search = false,
@@ -80,15 +81,32 @@ export async function POST(req: Request) {
 
     // If using own key, increment freeChatCount
     if (useOwnKey) {
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { freeChatCount: { increment: 1 } },
-        });
+        try {
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { freeChatCount: { increment: 1 } },
+            });
+        } catch (error) {
+            // If user doesn't exist, create it
+            if (error.code === 'P2025') {
+                await prisma.user.create({
+                    data: {
+                        id: session.user.id,
+                        email: session.user.email,
+                        name: session.user.name,
+                        freeChatCount: 1,
+                    },
+                });
+            } else {
+                console.error("Error updating user count:", error);
+            }
+        }
     }
 
     // Pass userApiKey?.apiKey to your AIHandler if present
     const aiHandler = new AIHandler({
         provider: provider as SupportedModels,
+        model: modelId,
         apiKey: userApiKey?.apiKey, // Use user's key if present
     });
 
@@ -137,7 +155,9 @@ export async function GET(req: Request) {
     } else {
         // Fetch all chats for the user
         try {
+            console.log("Fetching chats for user:", session.user.id);
             const chats = await getChatsByUser(session.user.id);
+            console.log("Fetched chats:", chats);
             return NextResponse.json({ chats });
         } catch (error) {
             console.error(error);
