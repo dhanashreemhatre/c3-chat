@@ -10,12 +10,11 @@ import {
     Plus,
     Trash2,
     Share2,
-    Settings,
-    Search,
     X,
     Key,
     Globe,
     AlertCircle,
+    Search,
 } from "lucide-react";
 import { useChatContext } from "../contexts/ChatContext";
 import { Chat } from "../services/chatService";
@@ -38,7 +37,6 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
         dispatch,
     } = useChatContext();
     const [searchQuery, setSearchQuery] = useState("");
-    const [showSettings, setShowSettings] = useState(false);
     const [showApiKeyForm, setShowApiKeyForm] = useState(false);
     const [apiKeyProvider, setApiKeyProvider] = useState("");
     const [apiKeyValue, setApiKeyValue] = useState("");
@@ -153,10 +151,10 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
             {/* Sidebar */}
             <div
                 className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
-                    } md:relative md:translate-x-0 md:flex md:flex-col h-screen`}
+                    } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden`}
             >
-                <Card className="h-full rounded-none bg-transparent border-0">
-                    <CardHeader className="pb-4 border-b border-slate-700">
+                <Card className="h-full dark rounded-none border-0 flex flex-col overflow-hidden">
+                    <CardHeader className="pb-4 border-b border-slate-700 flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-lg text-slate-100 flex items-center gap-2">
                                 <MessageSquare className="w-5 h-5" />
@@ -205,260 +203,95 @@ export default function ChatSidebar({ isOpen, onToggle }: ChatSidebarProps) {
                         </div>
                     </CardHeader>
 
-                    <CardContent className="p-0 flex-1 flex flex-col">
-                        {/* Settings Panel */}
-                        {showSettings && (
-                            <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-                                <h3 className="text-sm font-semibold text-slate-200 mb-3">
-                                    Settings
-                                </h3>
-
-                                {/* Model Selection */}
-                                <div className="mb-4">
-                                    <label className="text-xs text-slate-400 mb-2 block">
-                                        AI Model
-                                    </label>
-                                    <select
-                                        value={state.selectedModel}
-                                        onChange={(e) =>
-                                            dispatch({
-                                                type: "SET_SELECTED_MODEL",
-                                                payload: e.target.value,
-                                            })
-                                        }
-                                        className="w-full p-2 rounded bg-slate-700 border border-slate-600 text-slate-100 text-sm"
-                                    >
-                                        {CHAT_MODELS.map((model) => (
-                                            <option
-                                                key={model.id}
-                                                value={model.id}
-                                            >
-                                                {model.name} ({model.provider})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Search Toggle */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-2 text-sm text-slate-200">
-                                        <input
-                                            type="checkbox"
-                                            checked={state.searchEnabled}
-                                            onChange={(e) =>
-                                                dispatch({
-                                                    type: "SET_SEARCH_ENABLED",
-                                                    payload: e.target.checked,
-                                                })
-                                            }
-                                            className="rounded"
-                                        />
-                                        <Globe className="w-4 h-4" />
-                                        Enable Web Search
-                                    </label>
-                                </div>
-
-                                {/* API Key Management */}
-                                <div className="space-y-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            setShowApiKeyForm(!showApiKeyForm)
-                                        }
-                                        className="w-full text-slate-200 border-slate-600 hover:bg-slate-700"
-                                    >
-                                        <Key className="w-4 h-4 mr-2" />
-                                        Manage API Keys
-                                    </Button>
-
-                                    {showApiKeyForm && (
-                                        <form
-                                            onSubmit={handleSaveApiKey}
-                                            className="space-y-2 p-3 bg-slate-700/50 rounded"
-                                        >
-                                            <select
-                                                value={apiKeyProvider}
-                                                onChange={(e) =>
-                                                    setApiKeyProvider(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="w-full p-2 rounded bg-slate-600 border border-slate-500 text-slate-100 text-sm"
-                                                required
-                                            >
-                                                <option value="">
-                                                    Select Provider
-                                                </option>
-                                                {CHAT_MODELS.map((model) => (
-                                                    <option
-                                                        key={model.provider}
-                                                        value={model.provider.toLowerCase()}
-                                                    >
-                                                        {model.provider}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <Input
-                                                type="password"
-                                                placeholder="API Key"
-                                                value={apiKeyValue}
-                                                onChange={(e) =>
-                                                    setApiKeyValue(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="bg-slate-600 border-slate-500 text-slate-100"
-                                                required
-                                            />
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    type="submit"
-                                                    size="sm"
-                                                    className="flex-1"
-                                                >
-                                                    Save
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setShowApiKeyForm(false)
-                                                    }
-                                                >
-                                                    Cancel
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    )}
-                                </div>
-
-                                {/* Delete All Chats */}
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={handleDeleteAllChats}
-                                    className="w-full mt-4"
-                                    disabled={state.chats.length === 0}
-                                >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete All Chats
-                                </Button>
-                            </div>
-                        )}
-
+                    <CardContent className="p-0 flex-1 flex flex-col min-h-0">
                         {/* Chat List */}
-                        <ScrollArea className="flex-1">
-                            <div className="p-2">
-                                {state.isLoadingChats ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
-                                    </div>
-                                ) : Object.keys(chatGroups).length === 0 ? (
-                                    <div className="text-center py-8 text-slate-400">
-                                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm">No chats yet</p>
-                                        <p className="text-xs">
-                                            Start a new conversation
-                                        </p>
-                                    </div>
-                                ) : (
-                                    Object.entries(chatGroups).map(
-                                        ([dateGroup, chats]) => (
-                                            <div
-                                                key={dateGroup}
-                                                className="mb-4"
-                                            >
-                                                <h4 className="text-xs font-semibold text-slate-400 mb-2 px-2">
-                                                    {dateGroup}
-                                                </h4>
-                                                <div className="space-y-1">
-                                                    {chats.map((chat) => (
-                                                        <div
-                                                            key={chat.id}
-                                                            onClick={() =>
-                                                                handleChatClick(
-                                                                    chat.id,
-                                                                )
-                                                            }
-                                                            className={`
-                              group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-800/70
-                              ${state.currentChatId === chat.id ? "bg-slate-800 border border-blue-500/30" : "hover:bg-slate-800/50"}
-                            `}
-                                                        >
-                                                            <div className="flex-1 min-w-0 mr-2">
-                                                                <p className="text-sm font-medium text-slate-200 truncate">
-                                                                    {chat.title ||
-                                                                        "Untitled Chat"}
-                                                                </p>
-                                                                <p className="text-xs text-slate-400">
-                                                                    {new Date(
-                                                                        chat.updatedAt,
-                                                                    ).toLocaleTimeString(
-                                                                        [],
-                                                                        {
+                        <div className="flex-1 overflow-hidden">
+                            <ScrollArea className="h-full scrollbar-hide">
+                                <div className="p-2">
+                                    {state.isLoadingChats ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+                                        </div>
+                                    ) : Object.keys(chatGroups).length === 0 ? (
+                                        <div className="text-center py-8 text-slate-400">
+                                            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No chats yet</p>
+                                            <p className="text-xs">
+                                                Start a new conversation
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        Object.entries(chatGroups).map(
+                                            ([dateGroup, chats]) => (
+                                                <div
+                                                    key={dateGroup}
+                                                    className="mb-4"
+                                                >
+                                                    <h4 className="text-xs font-semibold text-slate-400 mb-2 px-2">
+                                                        {dateGroup}
+                                                    </h4>
+                                                    <div className="space-y-1">
+                                                        {chats.map((chat) => (
+                                                            <div
+                                                                key={chat.id}
+                                                                onClick={() => handleChatClick(chat.id)}
+                                                                className={`
+            group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-800/70
+            ${state.currentChatId === chat.id ? "bg-slate-800 border border-blue-500/30" : "hover:bg-slate-800/50"}
+        `}
+                                                            >
+                                                                <div className="w-[70%] min-w-0 pr-2">
+                                                                    <p className="text-sm font-medium text-slate-200 truncate">
+                                                                        {(chat.title || "Untitled Chat").length > 25
+                                                                            ? `${(chat.title || "Untitled Chat").substring(0, 25)}...`
+                                                                            : (chat.title || "Untitled Chat")
+                                                                        }
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-400 truncate">
+                                                                        {new Date(chat.updatedAt).toLocaleTimeString([], {
                                                                             hour: "2-digit",
                                                                             minute: "2-digit",
-                                                                        },
-                                                                    )}
-                                                                </p>
-                                                            </div>
+                                                                        })}
+                                                                    </p>
+                                                                </div>
 
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleShareChat(
-                                                                            chat.id,
-                                                                            e,
-                                                                        )
-                                                                    }
-                                                                    className="h-6 w-6 text-slate-400 hover:text-blue-400 hover:bg-slate-700"
-                                                                >
-                                                                    <Share2 className="w-3 h-3" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleDeleteChat(
-                                                                            chat.id,
-                                                                            e,
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        isDeleting ===
-                                                                        chat.id
-                                                                    }
-                                                                    className="h-6 w-6 text-slate-400 hover:text-red-400 hover:bg-slate-700"
-                                                                >
-                                                                    {isDeleting ===
-                                                                        chat.id ? (
-                                                                        <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
-                                                                    ) : (
-                                                                        <Trash2 className="w-3 h-3" />
-                                                                    )}
-                                                                </Button>
+                                                                <div className="w-[30%] flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={(e) => handleShareChat(chat.id, e)}
+                                                                        className="h-6 w-6 text-slate-400 hover:text-blue-400 hover:bg-slate-700"
+                                                                    >
+                                                                        <Share2 className="w-3 h-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                                                                        disabled={isDeleting === chat.id}
+                                                                        className="h-6 w-6 text-slate-400 hover:text-red-400 hover:bg-slate-700"
+                                                                    >
+                                                                        {isDeleting === chat.id ? (
+                                                                            <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                                                                        ) : (
+                                                                            <Trash2 className="w-3 h-3" />
+                                                                        )}
+                                                                    </Button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ),
-                                    )
-                                )}
-                            </div>
-                        </ScrollArea>
+                                            ),
+                                        )
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
 
                         {/* Error Display */}
                         {state.error && (
-                            <div className="p-4 border-t border-slate-700">
+                            <div className="p-4 border-t border-slate-700 flex-shrink-0">
                                 <div className="flex items-center gap-2 text-red-400 text-sm">
                                     <AlertCircle className="w-4 h-4" />
                                     <span>{state.error}</span>

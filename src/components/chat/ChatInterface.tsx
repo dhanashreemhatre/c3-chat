@@ -40,7 +40,7 @@ export default function ChatInterface() {
     const [showApiKeyManager, setShowApiKeyManager] = useState(false);
     const [showFileUpload, setShowFileUpload] = useState(false);
     const [showSettings, setShowSettings] = useState(false); // New state for settings modal
-    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    // const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [shareToken, setShareToken] = useState<string | null>(null);
 
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -82,6 +82,9 @@ export default function ChatInterface() {
     // Handle sending messages
     const handleSendMessage = async () => {
         console.log("handleSendMessage called with inputValue:", inputValue);
+        console.log("Current messages before sending:", state.messages);
+        console.log("Current loading state:", state.isLoading);
+
         if (!inputValue.trim() || state.isLoading) return;
 
         const content = inputValue.trim();
@@ -95,6 +98,7 @@ export default function ChatInterface() {
         try {
             console.log("Sending message:", content);
             await sendMessage(content, title);
+            console.log("Message sent, new messages:", state.messages);
         } catch (error) {
             console.error("Error sending message:", error);
         }
@@ -279,13 +283,13 @@ export default function ChatInterface() {
                                     )}
 
                                     <ModelSelector
-                                        selectedModel={state.selectedModel}
-                                        onModelChange={(model) =>
-                                            dispatch({
-                                                type: "SET_SELECTED_MODEL",
-                                                payload: model,
-                                            })
-                                        }
+                                    // selectedModel={state.selectedModel}
+                                    // onModelChange={(model) =>
+                                    //     dispatch({
+                                    //         type: "SET_SELECTED_MODEL",
+                                    //         payload: model,
+                                    //     })
+                                    // }
                                     />
 
                                     {/* New Chat Button
@@ -356,61 +360,73 @@ export default function ChatInterface() {
                         <CardContent className="flex-1 p-0 flex flex-col min-h-0">
                             <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
                                 <div className="p-4 sm:p-6 space-y-4">
-                                    {state.messages.length === 0 ? (
-                                        // Show loading screen when loading a specific chat, empty state otherwise
-                                        state.isLoading && state.currentChatId ? (
-                                            <div className="flex items-center justify-center h-full">
-                                                <div className="flex flex-col items-center space-y-4">
-                                                    <div className="flex space-x-1">
-                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"></div>
-                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                                        <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                                    </div>
-                                                    <span className="text-slate-400 text-sm">Loading chat...</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <EmptyState
-                                                currentModel={currentModel}
-                                                onStartChat={() => inputRef.current?.focus()}
-                                                searchEnabled={state.searchEnabled}
-                                                onSuggestionClick={(suggestion) => {
-                                                    setInputValue(suggestion);
-                                                    inputRef.current?.focus();
-                                                }}
-                                            />
-                                        )
-                                    ) : (
-                                        <div className="space-y-6">
-                                            {state.messages.map((message, index) => (
-                                                <div key={message.id || index} className="w-full">
-                                                    <MessageBubble
-                                                        message={message}
-                                                        onCopy={handleCopyMessage}
-                                                        onReaction={handleMessageReaction}
-                                                        onShare={handleShareMessage}
-                                                        isCopied={copiedMessageId === message.id}
-                                                    />
-                                                </div>
-                                            ))}
+                                    {(() => {
+                                        console.log("Render condition check:");
+                                        console.log("messages.length:", state.messages.length);
+                                        console.log("isLoading:", state.isLoading);
+                                        console.log("currentChatId:", state.currentChatId);
 
-                                            {/* Loading indicator */}
-                                            {state.isLoading && (
-                                                <div className="flex justify-start">
-                                                    <div className="bg-slate-800 rounded-2xl p-4 max-w-xs">
-                                                        <div className="flex items-center space-x-2">
-                                                            <div className="flex space-x-1">
-                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                                            </div>
-                                                            <span className="text-slate-400 text-sm">Thinking...</span>
+                                        if (state.messages.length === 0 && !state.isLoading) {
+                                            console.log("Showing EmptyState");
+                                            return (
+                                                <EmptyState
+                                                    currentModel={currentModel}
+                                                    onStartChat={() => inputRef.current?.focus()}
+                                                    searchEnabled={state.searchEnabled}
+                                                    onSuggestionClick={(suggestion) => {
+                                                        setInputValue(suggestion);
+                                                        inputRef.current?.focus();
+                                                    }}
+                                                />
+                                            );
+                                        } else if (state.messages.length === 0 && state.isLoading && state.currentChatId) {
+                                            console.log("Showing chat loading screen");
+                                            return (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <div className="flex flex-col items-center space-y-4">
+                                                        <div className="flex space-x-1">
+                                                            <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce"></div>
+                                                            <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                            <div className="w-3 h-3 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                                         </div>
+                                                        <span className="text-slate-400 text-sm">Loading chat...</span>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+                                            );
+                                        } else {
+                                            console.log("Showing messages area with", state.messages.length, "messages");
+                                            return (
+                                                <div className="space-y-6">
+                                                    {state.messages.map((message, index) => (
+                                                        <div key={message.id || index} className="w-full">
+                                                            <MessageBubble
+                                                                message={message}
+                                                                onCopy={handleCopyMessage}
+                                                                onReaction={handleMessageReaction}
+                                                                onShare={handleShareMessage}
+                                                            />
+                                                        </div>
+                                                    ))}
+
+                                                    {/* Loading indicator for new messages */}
+                                                    {state.isLoading && (
+                                                        <div className="flex justify-start">
+                                                            <div className="bg-slate-800 rounded-2xl p-4 max-w-xs">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <div className="flex space-x-1">
+                                                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                                    </div>
+                                                                    <span className="text-slate-400 text-sm">Thinking...</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+                                    })()}
                                 </div>
                             </ScrollArea>
 

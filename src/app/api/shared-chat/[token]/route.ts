@@ -12,6 +12,6 @@ export async function GET(
     }
     return NextResponse.json({ chat });
   } catch (e) {
-    return NextResponse.json({ error: "Unable to fetch chat" }, { status: 500 });
+    return NextResponse.json({ error: `Unable to fetch chat ${e}` }, { status: 500 });
   }
 }

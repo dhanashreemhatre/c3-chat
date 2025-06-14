@@ -9,6 +9,23 @@ type ModelInfo = {
     keySource: "user" | "server";
 };
 
+// Add these interface definitions at the top
+interface OpenAIModel {
+    id: string;
+    owned_by?: string;
+}
+
+interface MistralModel {
+    id: string;
+    description?: string;
+}
+
+interface GoogleGeminiModel {
+    name: string;
+    displayName?: string;
+    description?: string;
+}
+
 async function fetchOpenAIModels(apiKey: string): Promise<ModelInfo[]> {
     const res = await fetch("https://api.openai.com/v1/models", {
         headers: {
@@ -19,7 +36,7 @@ async function fetchOpenAIModels(apiKey: string): Promise<ModelInfo[]> {
     if (!res.ok) throw new Error("Failed to fetch OpenAI models");
     const data = await res.json();
 
-    return data.data.map((model: any) => ({
+    return data.data.map((model: OpenAIModel) => ({
         provider: "openai",
         id: model.id,
         name: model.id,
@@ -64,7 +81,7 @@ async function fetchMistralModels(apiKey: string): Promise<ModelInfo[]> {
     if (!res.ok) throw new Error("Failed to fetch Mistral models");
     const data = await res.json();
 
-    return data.data.map((model: any) => ({
+    return data.data.map((model: MistralModel) => ({
         provider: "mistral",
         id: model.id,
         name: model.id,
@@ -84,7 +101,7 @@ async function fetchGoogleGeminiModels(apiKey: string): Promise<ModelInfo[]> {
     if (!res.ok) throw new Error("Failed to fetch Gemini models");
     const data = await res.json();
 
-    return data.models.map((model: any) => ({
+    return data.models.map((model: GoogleGeminiModel) => ({
         provider: "google",
         id: model.name,
         name: model.displayName || model.name,

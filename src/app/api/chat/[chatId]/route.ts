@@ -3,7 +3,7 @@ import { auth } from "@/app/auth";
 import { softDeleteChat, getChatById } from "@/app/lib/db/chats";
 
 export async function DELETE(
-  req: Request,
+  // req: Request,
   { params }: { params: { chatId: string } }
 ) {
   const session = await auth();

@@ -1,5 +1,4 @@
 import { Message } from '../types/chat';
-import { modelService } from './modelService';
 
 export interface ChatResponse {
   reply: string;
