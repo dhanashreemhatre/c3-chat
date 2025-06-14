@@ -436,8 +436,8 @@ export default function ApiKeyManager({ isOpen, onClose }: ApiKeyManagerProps) {
                                                             {keyEntry.isVisible
                                                                 ? keyEntry.apiKey
                                                                 : maskApiKey(
-                                                                      keyEntry.apiKey,
-                                                                  )}
+                                                                    keyEntry.apiKey,
+                                                                )}
                                                         </p>
                                                     </div>
                                                 </div>

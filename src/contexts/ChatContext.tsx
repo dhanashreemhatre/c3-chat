@@ -53,6 +53,7 @@ export type ChatAction =
         type: "SET_USER_API_KEY";
         payload: { provider: string; apiKey: string };
     }
+    | { type: "DELETE_ALL_CHATS" }
     | { type: "CLEAR_MESSAGES" }
     | { type: "RESET_STATE" }
     | {

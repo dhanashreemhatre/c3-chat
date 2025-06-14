@@ -1,6 +1,6 @@
 import { auth } from "@/app/auth";
 import { NextResponse } from "next/server";
-import { AIHandler, SupportedModels } from "../../lib/ai/ai-handler";
+import { AIHandler } from "../../lib/ai/ai-handler";
 import {
     addMessage,
     createChat,
@@ -173,7 +173,9 @@ export async function GET(req: Request) {
 }
 
 // Delete all chats for the logged-in user
-export async function DELETE(req: Request) {
+export async function DELETE(
+    // req: Request
+) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

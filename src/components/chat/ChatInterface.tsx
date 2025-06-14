@@ -40,7 +40,7 @@ export default function ChatInterface() {
     const [showApiKeyManager, setShowApiKeyManager] = useState(false);
     const [showFileUpload, setShowFileUpload] = useState(false);
     const [showSettings, setShowSettings] = useState(false); // New state for settings modal
-    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    // const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [shareToken, setShareToken] = useState<string | null>(null);
 
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -279,13 +279,13 @@ export default function ChatInterface() {
                                     )}
 
                                     <ModelSelector
-                                        selectedModel={state.selectedModel}
-                                        onModelChange={(model) =>
-                                            dispatch({
-                                                type: "SET_SELECTED_MODEL",
-                                                payload: model,
-                                            })
-                                        }
+                                    // selectedModel={state.selectedModel}
+                                    // onModelChange={(model) =>
+                                    //     dispatch({
+                                    //         type: "SET_SELECTED_MODEL",
+                                    //         payload: model,
+                                    //     })
+                                    // }
                                     />
 
                                     {/* New Chat Button
@@ -389,7 +389,7 @@ export default function ChatInterface() {
                                                         onCopy={handleCopyMessage}
                                                         onReaction={handleMessageReaction}
                                                         onShare={handleShareMessage}
-                                                        isCopied={copiedMessageId === message.id}
+                                                    // isCopied={copiedMessageId === message.id}
                                                     />
                                                 </div>
                                             ))}
