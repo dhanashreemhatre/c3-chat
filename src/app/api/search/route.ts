@@ -15,14 +15,14 @@ export async function GET(request: Request) {
 
         return Response.json({
             success: true,
-            query,
             ...results
         });
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Search API error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         return Response.json(
-            { error: 'Search failed', details: error.message },
+            { error: 'Search failed', details: errorMessage },
             { status: 500 }
         );
     }

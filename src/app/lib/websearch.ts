@@ -1,5 +1,27 @@
 import * as cheerio from 'cheerio';
 
+// Define types for Google Search API response
+interface GoogleSearchItem {
+  title: string;
+  link: string;
+  snippet: string;
+  displayLink: string;
+  formattedUrl: string;
+  pagemap?: any;
+}
+
+interface GoogleSearchResponse {
+  items?: GoogleSearchItem[];
+  searchInformation?: {
+    totalResults: string;
+    searchTime: number;
+    formattedTotalResults: string;
+  };
+  error?: {
+    message: string;
+  };
+}
+
 async function scrapeContent(url: string): Promise<string> {
   try {
     const controller = new AbortController();
@@ -58,7 +80,7 @@ async function scrapeContent(url: string): Promise<string> {
       .replace(/\s+/g, ' ')
       .trim()
       .substring(0, 4000); // Limit to 4000 characters to avoid token limits
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error scraping ${url}:`, error);
     return '';
   }
@@ -97,7 +119,7 @@ export async function searchGoogle(query: string, numResults = 10) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: GoogleSearchResponse = await response.json();
     console.log('Google Search API response received');
 
     if (data.error) {
@@ -106,7 +128,7 @@ export async function searchGoogle(query: string, numResults = 10) {
 
     // Scrape content from top results
     const enrichedItems = await Promise.all(
-      (data.items || []).slice(0, 3).map(async (item) => {
+      (data.items || []).slice(0, 3).map(async (item: GoogleSearchItem) => {
         // Only scrape top 3 to avoid timeouts
         const scrapedContent = await scrapeContent(item.link);
         return {
@@ -131,7 +153,7 @@ export async function searchGoogle(query: string, numResults = 10) {
         formattedTotalResults: data.searchInformation?.formattedTotalResults,
       },
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Google Search API error:', error);
 
     // Return empty results instead of throwing to prevent chat from failing
@@ -143,7 +165,7 @@ export async function searchGoogle(query: string, numResults = 10) {
         searchTime: 0,
         formattedTotalResults: '0',
       },
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
