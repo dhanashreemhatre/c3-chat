@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, Settings, Key, Palette, Globe, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { X, Settings, Key, Palette, Globe, Trash2, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,23 +14,131 @@ interface SettingsModalProps {
     onClose: () => void;
 }
 
+interface ApiKeyEntry {
+    provider: string;
+    apiKey: string;
+    isVisible: boolean;
+    status: "active" | "invalid" | "unused";
+}
+
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { state, dispatch } = useChatContext();
+    const { state, dispatch, saveApiKey } = useChatContext();
     const [activeTab, setActiveTab] = useState("general");
     const [showApiKeyForm, setShowApiKeyForm] = useState(false);
     const [apiKeyProvider, setApiKeyProvider] = useState("");
     const [apiKeyValue, setApiKeyValue] = useState("");
+    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
 
-    if (!isOpen) return null;
+    // Get unique providers from chat models
+    const availableProviders = Array.from(
+        new Set(CHAT_MODELS.map((model) => model.provider.toLowerCase())),
+    );
 
-    const handleSaveApiKey = (e: React.FormEvent) => {
+    const loadApiKeys = useCallback(() => {
+        const entries: ApiKeyEntry[] = Object.entries(state.userApiKeys).map(
+            ([provider, apiKey]) => ({
+                provider,
+                apiKey: apiKey as string,
+                isVisible: false,
+                status: "active" as const,
+            }),
+        );
+        setApiKeys(entries);
+    }, [state.userApiKeys]);
+
+    useEffect(() => {
+        if (isOpen) {
+            loadApiKeys();
+        }
+    }, [isOpen, loadApiKeys]);
+
+    const validateApiKeyFormat = (provider: string, apiKey: string): boolean => {
+        const patterns: Record<string, RegExp> = {
+            openai: /^sk-[a-zA-Z0-9]{48,}$/,
+            anthropic: /^sk-ant-[a-zA-Z0-9\-_]{95,}$/,
+            google: /^[a-zA-Z0-9\-_]{39}$/,
+        };
+
+        const pattern = patterns[provider.toLowerCase()];
+        return pattern ? pattern.test(apiKey) : apiKey.length > 10;
+    };
+
+    const maskApiKey = (apiKey: string): string => {
+        if (apiKey.length <= 8) return "••••••••";
+        return (
+            apiKey.substring(0, 4) + "••••••••" + apiKey.substring(apiKey.length - 4)
+        );
+    };
+
+    const toggleVisibility = (provider: string) => {
+        setApiKeys((prev) =>
+            prev.map((key) =>
+                key.provider === provider ? { ...key, isVisible: !key.isVisible } : key,
+            ),
+        );
+    };
+
+    const handleSaveApiKey = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Save API key logic here
-        console.log("Saving API key for:", apiKeyProvider, apiKeyValue);
-        // Reset form
-        setApiKeyValue("");
-        setApiKeyProvider("");
-        setShowApiKeyForm(false);
+        
+        if (!apiKeyProvider || !apiKeyValue.trim()) {
+            setError("Please select a provider and enter an API key");
+            return;
+        }
+
+        if (!validateApiKeyFormat(apiKeyProvider, apiKeyValue)) {
+            setError("Invalid API key format for selected provider");
+            return;
+        }
+
+        try {
+            setError(null);
+            await saveApiKey(apiKeyProvider, apiKeyValue.trim());
+
+            const newEntry: ApiKeyEntry = {
+                provider: apiKeyProvider,
+                apiKey: apiKeyValue.trim(),
+                isVisible: false,
+                status: "active",
+            };
+
+            setApiKeys((prev) => {
+                const filtered = prev.filter((key) => key.provider !== apiKeyProvider);
+                return [...filtered, newEntry];
+            });
+
+            setApiKeyValue("");
+            setApiKeyProvider("");
+            setShowApiKeyForm(false);
+            setSuccess(`API key for ${apiKeyProvider} saved successfully!`);
+
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (error) {
+            setError(
+                error instanceof Error ? error.message : "Failed to save API key",
+            );
+        }
+    };
+
+    const handleRemoveApiKey = async (provider: string) => {
+        if (
+            !window.confirm(`Are you sure you want to remove the API key for ${provider}?`)
+        ) {
+            return;
+        }
+
+        try {
+            await saveApiKey(provider, "");
+            setApiKeys((prev) => prev.filter((key) => key.provider !== provider));
+            setSuccess(`API key for ${provider} removed successfully!`);
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (error) {
+            setError(
+                error instanceof Error ? error.message : "Failed to remove API key",
+            );
+        }
     };
 
     const handleDeleteAllChats = () => {
@@ -39,9 +147,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
     };
 
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-4xl max-h-[90vh] bg-slate-900 border-slate-700 flex flex-col">
+            <Card className="w-full max-w-4xl max-h-[90vh] dark border-slate-700 flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <div className="flex items-center gap-2">
                         <Settings className="w-5 h-5 text-slate-400" />
@@ -51,7 +161,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                        className="text-slate-400 hover:text-slate-100 hover:dark"
                     >
                         <X className="w-4 h-4" />
                     </Button>
@@ -59,31 +169,31 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                 <CardContent className="flex-1 overflow-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-                        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
+                        <TabsList className="grid w-full grid-cols-4 dark">
                             <TabsTrigger
                                 value="general"
-                                className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+                                className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
                                 <Settings className="w-4 h-4 mr-2" />
                                 General
                             </TabsTrigger>
                             <TabsTrigger
                                 value="api-keys"
-                                className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+                                className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
                                 <Key className="w-4 h-4 mr-2" />
                                 API Keys
                             </TabsTrigger>
                             <TabsTrigger
                                 value="appearance"
-                                className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+                                className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
                                 <Palette className="w-4 h-4 mr-2" />
                                 Appearance
                             </TabsTrigger>
                             <TabsTrigger
                                 value="data"
-                                className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100"
+                                className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Data
@@ -91,6 +201,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </TabsList>
 
                         <div className="mt-4 h-[calc(100%-60px)] overflow-y-auto">
+                            {/* Status Messages */}
+                            {error && (
+                                <div className="mb-4 p-3 rounded-lg bg-red-900/20 border border-red-500/30">
+                                    <div className="flex items-center gap-2 text-red-400">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span className="text-sm">{error}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setError(null)}
+                                            className="ml-auto text-red-400 hover:text-red-300"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {success && (
+                                <div className="mb-4 p-3 rounded-lg bg-green-900/20 border border-green-500/30">
+                                    <div className="flex items-center gap-2 text-green-400">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">{success}</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* General Settings */}
                             <TabsContent value="general" className="mt-0">
                                 <div className="space-y-6">
@@ -116,7 +253,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                     payload: e.target.value,
                                                 })
                                             }
-                                            className="w-full p-3 rounded-lg bg-slate-800 border border-slate-600 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            className="w-full p-3 rounded-lg dark border border-slate-600 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                         >
                                             {CHAT_MODELS.map((model) => (
                                                 <option key={model.id} value={model.id}>
@@ -134,7 +271,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         <label className="text-sm font-medium text-slate-200">
                                             Web Search
                                         </label>
-                                        <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg border border-slate-600">
+                                        <div className="flex items-center gap-3 p-3 dark rounded-lg border border-slate-600">
                                             <input
                                                 type="checkbox"
                                                 id="web-search"
@@ -145,7 +282,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                         payload: e.target.checked,
                                                     })
                                                 }
-                                                className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-500 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-blue-600 dark border-slate-500 rounded focus:ring-blue-500"
                                             />
                                             <label htmlFor="web-search" className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
                                                 <Globe className="w-4 h-4" />
@@ -167,15 +304,58 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             API Key Management
                                         </h3>
                                         <p className="text-sm text-slate-400 mb-4">
-                                            Manage your API keys for different AI providers
+                                            Manage your API keys for different AI providers. Add your own API keys to unlock unlimited usage.
                                         </p>
                                     </div>
+
+                                    {/* Existing API Keys */}
+                                    {apiKeys.length > 0 && (
+                                        <div className="space-y-3 mb-6">
+                                            <h4 className="text-sm font-medium text-slate-200">Your API Keys</h4>
+                                            {apiKeys.map((keyEntry) => (
+                                                <div key={keyEntry.provider} className="p-3 dark rounded-lg border border-slate-600">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-slate-200 capitalize">
+                                                                {keyEntry.provider}
+                                                            </p>
+                                                            <p className="text-xs text-slate-400 font-mono">
+                                                                {keyEntry.isVisible ? keyEntry.apiKey : maskApiKey(keyEntry.apiKey)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-900/20 border border-green-500/30">
+                                                                <div className="w-2 h-2 bg-green-400 rounded-full" />
+                                                                <span className="text-xs text-green-400">Active</span>
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => toggleVisibility(keyEntry.provider)}
+                                                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-100"
+                                                            >
+                                                                {keyEntry.isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleRemoveApiKey(keyEntry.provider)}
+                                                                className="h-8 w-8 p-0 text-slate-400 hover:text-red-400"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     <div className="space-y-4">
                                         <Button
                                             variant="outline"
                                             onClick={() => setShowApiKeyForm(!showApiKeyForm)}
-                                            className="w-full text-slate-200 border-slate-600 hover:bg-slate-700"
+                                            className="w-full text-slate-200 border-slate-600 hover:dark"
                                         >
                                             <Key className="w-4 h-4 mr-2" />
                                             {showApiKeyForm ? "Cancel" : "Add API Key"}
@@ -184,7 +364,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         {showApiKeyForm && (
                                             <form
                                                 onSubmit={handleSaveApiKey}
-                                                className="space-y-4 p-4 bg-slate-800 rounded-lg border border-slate-600"
+                                                className="space-y-4 p-4 dark rounded-lg border border-slate-600"
                                             >
                                                 <div>
                                                     <label className="text-sm font-medium text-slate-200 mb-2 block">
@@ -193,13 +373,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                     <select
                                                         value={apiKeyProvider}
                                                         onChange={(e) => setApiKeyProvider(e.target.value)}
-                                                        className="w-full p-3 rounded-lg bg-slate-700 border border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                        className="w-full p-3 rounded-lg dark border border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                         required
                                                     >
                                                         <option value="">Select Provider</option>
-                                                        {Array.from(new Set(CHAT_MODELS.map(model => model.provider))).map((provider) => (
-                                                            <option key={provider} value={provider.toLowerCase()}>
-                                                                {provider}
+                                                        {availableProviders.map((provider) => (
+                                                            <option key={provider} value={provider}>
+                                                                {provider.charAt(0).toUpperCase() + provider.slice(1)}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -214,7 +394,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                         placeholder="Enter your API key..."
                                                         value={apiKeyValue}
                                                         onChange={(e) => setApiKeyValue(e.target.value)}
-                                                        className="bg-slate-700 border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                        className="dark border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                         required
                                                     />
                                                 </div>
@@ -226,8 +406,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        onClick={() => setShowApiKeyForm(false)}
-                                                        className="text-slate-200 border-slate-600 hover:bg-slate-700"
+                                                        onClick={() => {
+                                                            setShowApiKeyForm(false);
+                                                            setApiKeyProvider("");
+                                                            setApiKeyValue("");
+                                                            setError(null);
+                                                        }}
+                                                        className="text-slate-200 border-slate-600 hover:dark"
                                                     >
                                                         Cancel
                                                     </Button>
@@ -250,7 +435,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         </p>
                                     </div>
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-slate-800 rounded-lg border border-slate-600">
+                                        <div className="p-4 dark rounded-lg border border-slate-600">
                                             <h4 className="text-sm font-medium text-slate-200 mb-2">Theme</h4>
                                             <p className="text-sm text-slate-400">Theme customization coming soon...</p>
                                         </div>
@@ -271,7 +456,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div className="p-4 bg-slate-800 rounded-lg border border-slate-600">
+                                        <div className="p-4 dark rounded-lg border border-slate-600">
                                             <h4 className="text-sm font-medium text-slate-200 mb-2">Chat History</h4>
                                             <p className="text-sm text-slate-400 mb-4">
                                                 You currently have {state.chats.length} chat(s) saved.

@@ -106,7 +106,7 @@ export default function HomePage() {
         <div className="min-h-screen bg-black text-white">
             {/* Navigation */}
             <nav className="border-b border-slate-800">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-6xl mx-auto px-4 sm:px-4 lg:px-6">
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
