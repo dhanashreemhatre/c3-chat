@@ -13,7 +13,6 @@ import {
   Globe,
   GlobeLock, 
   Upload,
-  Key,
   Share2,
   LogOut,
   Settings,
