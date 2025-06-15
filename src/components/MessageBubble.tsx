@@ -28,7 +28,7 @@ export function MessageBubble({
   onShare,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  // const [showActions, setShowActions] = useState(false);
   const isUser = message.role === "user";
 
   const handleCopy = async () => {
@@ -46,9 +46,6 @@ export function MessageBubble({
     onReaction?.(message.id, reaction);
   };
 
-  const handleShare = () => {
-    onShare?.(message.id);
-  };
 
   const renderContent = (content: string) => {
     // Simple markdown-like rendering
@@ -97,9 +94,13 @@ export function MessageBubble({
       '<li class="ml-4">$2</li>',
     );
     processedContent = processedContent.replace(
-      /(<li.*<\/li>)/,
+      /(<li.*<\/li>)/g, // Removed 's' flag for compatibility with older targets
       '<ol class="list-decimal list-inside space-y-1">$1</ol>',
     );
+    // Ensure list regexes for ul and ol don't conflict if both are present or one after another.
+    // The current replacement might wrap individual li items in separate ul/ol.
+    // A more robust markdown parser would be better for complex cases.
+    // For simplicity, assuming lists are not immediately consecutive or nested in a way that breaks this.
 
     return processedContent;
   };
@@ -107,8 +108,8 @@ export function MessageBubble({
   return (
     <div
       className={`group flex gap-3 mb-6 animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      // onMouseEnter={() => setShowActions(true)}
+      // onMouseLeave={() => setShowActions(false)}
     >
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/10">
@@ -120,7 +121,7 @@ export function MessageBubble({
         className={`max-w-[85%] sm:max-w-[70%] ${isUser ? "order-first" : ""}`}
       >
         <div
-          className={`relative rounded-2xl px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${
+          className={`rounded-2xl px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${ // Removed 'relative'
             isUser
               ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-auto transform hover:scale-[1.02]"
               : "bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
@@ -135,10 +136,10 @@ export function MessageBubble({
           />
 
           {/* Action buttons */}
-          {showActions && (
+          
             <div
-              className={`absolute top-2 flex items-center gap-1 opacity-100 transition-opacity ${
-                isUser ? "left-2" : "right-2"
+              className={`mt-2 flex items-center gap-2 opacity-100 transition-opacity ${
+                isUser ? "justify-end" : "justify-start"
               }`}
             >
               <Button
@@ -154,6 +155,11 @@ export function MessageBubble({
                   <Copy className="w-3 h-3" />
                 )}
               </Button>
+              {copied && (
+                <span className="text-xs text-green-400 animate-fade-in">
+                  Copied!
+                </span>
+              )}
 
               {!isUser && (
                 <>
@@ -176,20 +182,10 @@ export function MessageBubble({
                   >
                     <ThumbsDown className="w-3 h-3" />
                   </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleShare}
-                    className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-blue-400"
-                    title="Share this message"
-                  >
-                    <Share2 className="w-3 h-3" />
-                  </Button>
                 </>
               )}
             </div>
-          )}
+          
         </div>
 
         {/* Timestamp */}
@@ -199,11 +195,6 @@ export function MessageBubble({
           <p className="text-xs text-slate-400">
             {formatTime(message.timestamp)}
           </p>
-          {copied && (
-            <span className="text-xs text-green-400 animate-fade-in">
-              Copied!
-            </span>
-          )}
         </div>
       </div>
 

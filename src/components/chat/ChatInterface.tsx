@@ -183,10 +183,10 @@ export default function ChatInterface() {
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex flex-col h-screen max-w-6xl mx-auto w-full">
           {/* Header */}
-          <Card className="m-2 sm:m-4 lg:m-6 mb-4 dark border-slate-700 backdrop-blur-sm shadow-2xl">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div className="flex items-center gap-3">
+          <Card className="m-2 sm:m-2 lg:m-4 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl">
+            <CardHeader className="pb-1">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -217,37 +217,6 @@ export default function ChatInterface() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* File Upload Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowFileUpload(true)}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                    title="Upload Files"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </Button>
-
-                  {/* Search Toggle */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleSearch}
-                    className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${
-                      state.searchEnabled ? "text-green-400" : ""
-                    }`}
-                    title={
-                      state.searchEnabled
-                        ? "Disable Web Search"
-                        : "Enable Web Search"
-                    }
-                  >
-                    {state.searchEnabled ? (
-                      <Globe className="w-4 h-4" />
-                    ) : (
-                      <GlobeLock className="w-4 h-4" />
-                    )}
-                  </Button>
 
                   {/* API Key Manager */}
                   <Button
@@ -272,26 +241,7 @@ export default function ChatInterface() {
                       <Share2 className="w-4 h-4" />
                     </Button>
                   )}
-
-                  <ModelSelector
-                  // selectedModel={state.selectedModel}
-                  // onModelChange={(model) =>
-                  //     dispatch({
-                  //         type: "SET_SELECTED_MODEL",
-                  //         payload: model,
-                  //     })
-                  // }
-                  />
-
-                  {/* New Chat Button
-                                    <Button
-                                        onClick={createNewChat}
-                                        variant="outline"
-                                        size="sm"
-                                        className="hidden sm:flex text-slate-200 border-slate-600 hover:bg-slate-700"
-                                    >
-                                        New Chat
-                                    </Button> */}
+        
 
                   {/* Logout Button */}
                   <Button
@@ -319,7 +269,7 @@ export default function ChatInterface() {
             </CardHeader>
           </Card>
 
-          {/* Error Display */}
+          {/* Error Display
           {state.error && (
             <Card className="mx-2 sm:mx-4 lg:mx-6 mb-4 bg-red-900/20 border-red-500/30">
               <CardContent className="p-4">
@@ -342,10 +292,10 @@ export default function ChatInterface() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          )} */}
 
           {/* Chat Messages */}
-          <Card className="flex-1 flex flex-col mx-2 sm:mx-4 lg:mx-6 mb-4 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
+          <Card className="flex-1 flex flex-col mx-2 sm:mx-2 lg:mx-4 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
             <CardContent className="flex-1 p-0 flex flex-col min-h-0">
               <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
                 <div className="p-4 sm:p-6 space-y-4">
@@ -444,8 +394,8 @@ export default function ChatInterface() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="p-4 sm:p-6 border-t border-slate-700 dark flex-shrink-0">
-                <div className="flex gap-3 max-w-4xl mx-auto">
+              <div className="p-4 pb-2 sm:p-4 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
+                <div className="flex gap-1 max-w-4xl mx-auto">
                   <div className="flex-1 relative">
                     <Input
                       ref={inputRef}
@@ -471,10 +421,44 @@ export default function ChatInterface() {
                     <Send className="w-5 h-5" />
                   </Button>
                 </div>
+                <div className="flex items-center justify-start mt-1 text-xs text-slate-500">
+                 {/* File Upload Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowFileUpload(true)}
+                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                    title="Upload Files"
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
+
+                  {/* Search Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSearch}
+                    className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${
+                      state.searchEnabled ? "text-green-400" : ""
+                    }`}
+                    title={
+                      state.searchEnabled
+                        ? "Disable Web Search"
+                        : "Enable Web Search"
+                    }
+                  >
+                    {state.searchEnabled ? (
+                      <Globe className="w-4 h-4" />
+                    ) : (
+                      <GlobeLock className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <ModelSelector/>
+                </div>
 
                 {/* Chat info */}
                 {state.currentChatId && (
-                  <div className="text-center text-xs text-slate-500 mt-2">
+                  <div className="text-center text-xs text-slate-500 mt-1">
                     Chat ID: {state.currentChatId}
                   </div>
                 )}
