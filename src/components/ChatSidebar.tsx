@@ -148,12 +148,12 @@ export default function ChatSidebar({
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-67 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-67 bg-background border-r border-border transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden rounded-r-lg`}
       >
-        <Card className="h-full dark rounded-none border-0 flex flex-col overflow-hidden">
-          <CardHeader className="pb-4 border-b border-slate-700 flex-shrink-0">
+        <Card className="h-full dark rounded-none border-1 flex flex-col overflow-hidden">
+          <CardHeader className="pb-4 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg text-slate-100 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
@@ -166,7 +166,7 @@ export default function ChatSidebar({
                   onClick={onToggleAction}
                   className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-8 h-8" />
                 </Button>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function ChatSidebar({
             {/* New Chat Button */}
             <Button
               onClick={handleNewChat}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+              className="bg-foreground w-full text-black border-1"
             >
               New Chat
             </Button>
@@ -186,7 +186,7 @@ export default function ChatSidebar({
                 placeholder="Search chats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 dark/50 border-slate-600 text-slate-100 placeholder-slate-400"
+                className="pl-10 dark/50 border-border text-slate-100 placeholder-slate-400"
               />
             </div>
           </CardHeader>
@@ -198,7 +198,7 @@ export default function ChatSidebar({
                 <div className="p-2">
                   {state.isLoadingChats ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-border"></div>
                     </div>
                   ) : Object.keys(chatGroups).length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
@@ -219,7 +219,7 @@ export default function ChatSidebar({
                               onClick={() => handleChatClick(chat.id)}
                               className={`
             group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:dark/70
-            ${state.currentChatId === chat.id ? "dark border border-blue-500/30" : "hover:dark/50"}
+            ${state.currentChatId === chat.id ? "dark border-1 border-border" : "hover:dark/50"}
         `}
                             >
                               <div className="w-[70%] min-w-0 pr-1">
@@ -274,7 +274,7 @@ export default function ChatSidebar({
 
             {/* Error Display */}
             {state.error && (
-              <div className="p-4 border-t border-slate-700 flex-shrink-0">
+              <div className="p-4 border-t border-border flex-shrink-0">
                 <div className="flex items-center gap-2 text-red-400 text-sm">
                   <AlertCircle className="w-4 h-4" />
                   <span>{state.error}</span>

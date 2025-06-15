@@ -40,13 +40,15 @@ export default function ModelSelector() {
             dispatch({ type: "SET_SELECTED_MODEL", payload: value });
           }}
         >
-          <SelectTrigger className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+          <SelectTrigger className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-border">
             {/* Custom display for selected value */}
             <div className="flex items-center gap-2">
               {currentModel ? (
                 <>
                   <span className="font-medium truncate">
-                    {currentModel.name}
+                    {currentModel.name.length > 20
+                      ? currentModel.name.slice(0, 20) + '…'
+                      : currentModel.name}
                   </span>
                   <span className="text-xs text-gray-500">
                     ({currentModel.provider})
@@ -57,7 +59,7 @@ export default function ModelSelector() {
               )}
             </div>
           </SelectTrigger>
-          <SelectContent className="dark border-slate-700 max-w-[280px] md:max-w-[350px]">
+          <SelectContent className="dark border-border max-w-[280px] md:max-w-[350px]">
             {availableModels.map((model) => (
               <SelectItem
                 key={model.id}
