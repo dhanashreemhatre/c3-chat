@@ -11,7 +11,8 @@ import {
 import { getMessagesByChatId } from "@/app/lib/db/message";
 import { getUserApiKeys, getUserByEmail } from "@/app/lib/db/user";
 import { prisma } from "@/app/lib/db/db";
-import { webSearch } from "@/app/lib/websearch";
+// import { webSearch } from "@/app/lib/websearch";
+import { searchGoogle } from "@/app/lib/websearch";
 
 export async function POST(req: Request) {
   console.log("=== API ROUTE START ===");
@@ -75,18 +76,88 @@ export async function POST(req: Request) {
 
   let searchResults = null;
   if (search) {
-    searchResults = await webSearch(userMessage.content);
+    try {
+      console.log("Performing web search for:", userMessage.content);
+      searchResults = await searchGoogle(userMessage.content);
+
+      if (searchResults.error) {
+        console.log("Search completed with error:", searchResults.error);
+        // Continue without search results
+        searchResults = null;
+      } else {
+        console.log("Search completed successfully");
+      }
+    } catch (error) {
+      console.error("Search failed, continuing without web results:", error);
+      searchResults = null;
+    }
   }
 
   let messagesForLLM = messages;
   if (searchResults) {
-    messagesForLLM = [
-      ...messages,
-      {
-        role: "system",
-        content: `Web search results:\n${JSON.stringify(searchResults)}`,
-      },
-    ];
+    // Format search results with full content
+    const formattedResults = searchResults.items
+      .filter(item => item.scrapedContent && item.scrapedContent.length > 100) // Only include results with substantial content
+      .slice(0, 3) // Limit to top 3 results with content
+      .map((item, index) =>
+        `${index + 1}. **${item.title}**
+   URL: ${item.link}
+   Summary: ${item.snippet}
+   
+   Full Content:
+   ${item.scrapedContent}
+   
+   ---`
+      ).join('\n\n');
+
+    if (formattedResults) {
+      const searchContext = `You are an AI assistant tasked with answering the user's question using information from web search results.
+
+USER QUESTION: "${userMessage.content}"
+
+WEB SEARCH RESULTS:
+${formattedResults}
+
+INSTRUCTIONS:
+1. ANSWER REQUIREMENTS:
+   - Provide a direct, comprehensive answer to the user's question
+   - Use ONLY information found in the provided web search results
+   - If the search results don't contain enough information to answer the question, clearly state this limitation
+   - Synthesize information from multiple sources when relevant
+
+2. CITATION REQUIREMENTS:
+   - Always cite your sources using [ Source: URL or Title ] format
+   - Include citations immediately after each claim or piece of information
+   - If multiple sources support the same point, cite all relevant sources
+   - Never make claims without proper citations to the search results
+
+3. HANDLING CONFLICTING INFORMATION:
+   - If sources contradict each other, explicitly mention the contradiction
+   - Present different viewpoints with their respective sources
+   - Do not choose sides unless there's overwhelming evidence from more authoritative sources
+
+4. QUALITY GUIDELINES:
+   - Structure your answer logically with clear sections if the topic is complex
+   - Use specific details, numbers, dates, and examples from the sources
+   - Avoid generic statements - be specific and factual
+   - If information is outdated, mention the publication date
+
+5. LIMITATIONS:
+   - If the search results are insufficient or off-topic, say: "The provided search results do not contain enough relevant information to fully answer your question about [topic]."
+   - Don't speculate or add information not found in the search results
+   - If you need more recent information, suggest the user perform a new search
+
+Please provide your answer now, following all the above guidelines.`;
+
+      // Put system message FIRST, then other messages
+      messagesForLLM = [
+        {
+          role: "system",
+          content: searchContext,
+        },
+        ...messages // Add all original messages after the system message
+      ];
+    }
   }
 
   if (useOwnKey) {
