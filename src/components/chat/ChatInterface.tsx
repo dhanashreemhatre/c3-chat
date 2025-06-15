@@ -8,13 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Send,
   Bot,
-  Menu,
   Globe,
   GlobeLock,
   Paperclip ,
   Share2,
   LogOut,
   Settings,
+  PanelLeftOpen,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -179,9 +179,16 @@ export default function ChatInterface() {
 
   const currentModel = CHAT_MODELS.find((m) => m.id === state.selectedModel);
 
+  // Only allow sidebar to open if it's not already open
+  const handleSidebarToggle = () => {
+    setSidebarOpen((prev) => !prev);
+  };
+
   return (
     <div
-      className="bg-black flex sm:min-h-0 min-h-[100dvh] h-[100dvh] sm:h-screen" // Use h-screen for full viewport height
+      className={`bg-black flex sm:min-h-0 min-h-[100dvh] h-[100dvh] sm:h-screen transition-all duration-300 ${
+        sidebarOpen ? "" : "w-full"
+      }`}
       style={{
         boxSizing: "border-box",
       }}
@@ -189,11 +196,15 @@ export default function ChatInterface() {
       {/* Sidebar */}
       <ChatSidebar
         isOpen={sidebarOpen}
-        onToggleAction={() => setSidebarOpen(!sidebarOpen)}
+        onToggleAction={handleSidebarToggle}
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div
+        className={`flex-1 flex flex-col min-w-0 min-h-0 transition-all duration-300 ${
+          sidebarOpen ? "" : "max-w-full"
+        }`}
+      >
         <div className="flex flex-col h-full max-w-6xl mx-auto w-full">
           {/* Header */}
           <Card className="mx-2 sm:mx-2 lg:mx-2 my-0 bg-transparent w-full">
@@ -205,12 +216,13 @@ export default function ChatInterface() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      onClick={() => {
+                        if (!sidebarOpen) setSidebarOpen(true);
+                      }}
                       className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
                     >
-                      <Menu className="w-8 h-8" />
+                      <PanelLeftOpen className="w-8 h-8" />
                     </Button>
-
                     <CardTitle className="text-xl text-slate-100">
                       C3Chat AI Assistant
                     </CardTitle>
@@ -368,7 +380,7 @@ export default function ChatInterface() {
                             : "Type your message..."
                         }
                         disabled={state.isLoading}
-                        className="dark border-border text-slate-100 placeholder-slate-400 pr-12 h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="dark border-border text-slate-100 placeholder-slate-400 pr-12 h-10 sm:h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       />
                     </div>
 
@@ -376,7 +388,7 @@ export default function ChatInterface() {
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() || state.isLoading}
                       size="icon"
-                      className="h-12 w-12 rounded-xl  shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                      className="h-10 sm:h-12 w-12 rounded-xl  shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                     >
                       <Send className="w-5 h-5" />
                     </Button>

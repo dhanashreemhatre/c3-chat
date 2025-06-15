@@ -40,12 +40,12 @@ export default function ModelSelector() {
             dispatch({ type: "SET_SELECTED_MODEL", payload: value });
           }}
         >
-          <SelectTrigger className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-border">
+          <SelectTrigger className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-border">
             {/* Custom display for selected value */}
             <div className="flex items-center gap-2">
               {currentModel ? (
                 <>
-                  <span className="font-medium truncate">
+                  <span className="font-medium text-white truncate">
                     {currentModel.name.length > 20
                       ? currentModel.name.slice(0, 20) + '…'
                       : currentModel.name}
@@ -68,7 +68,7 @@ export default function ModelSelector() {
               >
                 <div className="flex flex-col items-start w-full">
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-medium text-slate-100">
+                    <span className="font-medium text-white">
                       {model.name}
                     </span>
                     {model.keySource && (
@@ -83,12 +83,12 @@ export default function ModelSelector() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 w-full">
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-white">
                       {model.provider}
                     </span>
                     {model.description && (
                       <span
-                        className="text-xs text-slate-500 truncate max-w-[180px] inline-block"
+                        className="text-xs text-white truncate max-w-[180px] inline-block"
                         title={model.description}
                       >
                         • {model.description}

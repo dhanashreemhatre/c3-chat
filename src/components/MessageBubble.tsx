@@ -62,13 +62,13 @@ export function MessageBubble({
     // Code blocks
     processedContent = processedContent.replace(
       /```([\s\S]*?)```/g,
-      '<pre class="bg-slate-800 p-3 rounded-lg my-2 overflow-x-auto"><code>$1</code></pre>',
+      '<pre class="bg-sidebar p-3 rounded-lg my-2 overflow-x-auto"><code>$1</code></pre>',
     );
 
     // Inline code
     processedContent = processedContent.replace(
       /`([^`]+)`/g,
-      '<code class="bg-slate-700 px-1.5 py-0.5 rounded text-sm">$1</code>',
+      '<code class="bg-background px-1.5 py-0.5 rounded text-sm">$1</code>',
     );
 
     // Links
