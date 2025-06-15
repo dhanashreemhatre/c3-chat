@@ -110,7 +110,7 @@ export default function ApiKeyManager({ isOpen, onClose }: ApiKeyManagerProps) {
 
   const validateApiKeyFormat = (provider: string, apiKey: string): boolean => {
     const patterns: Record<string, RegExp> = {
-      openai: /^sk-[a-zA-Z0-9]{48,}$/,
+      openai: /^sk-[a-zA-Z0-9\-_]{48,}$/,
       anthropic: /^sk-ant-[a-zA-Z0-9\-_]{95,}$/,
       google: /^[a-zA-Z0-9\-_]{39}$/,
     };
@@ -156,23 +156,23 @@ export default function ApiKeyManager({ isOpen, onClose }: ApiKeyManagerProps) {
 
   const getProviderInfo = (provider: string) => {
     const info: Record<string, { name: string; color: string; docs: string }> =
-      {
-        openai: {
-          name: "OpenAI",
-          color: "from-green-400 to-green-600",
-          docs: "https://platform.openai.com/api-keys",
-        },
-        anthropic: {
-          name: "Anthropic",
-          color: "from-orange-400 to-orange-600",
-          docs: "https://console.anthropic.com/settings/keys",
-        },
-        google: {
-          name: "Google",
-          color: "from-blue-400 to-blue-600",
-          docs: "https://aistudio.google.com/app/apikey",
-        },
-      };
+    {
+      openai: {
+        name: "OpenAI",
+        color: "from-green-400 to-green-600",
+        docs: "https://platform.openai.com/api-keys",
+      },
+      anthropic: {
+        name: "Anthropic",
+        color: "from-orange-400 to-orange-600",
+        docs: "https://console.anthropic.com/settings/keys",
+      },
+      google: {
+        name: "Google",
+        color: "from-blue-400 to-blue-600",
+        docs: "https://aistudio.google.com/app/apikey",
+      },
+    };
 
     return (
       info[provider.toLowerCase()] || {

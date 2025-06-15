@@ -71,13 +71,12 @@ export default function ModelSelector() {
                     </span>
                     {model.keySource && (
                       <span
-                        className={`text-xs px-1.5 py-0.5 rounded ${
-                          model.keySource === "user"
-                            ? "bg-green-800 text-green-100"
-                            : "bg-blue-800 text-blue-100"
-                        }`}
+                        className={`text-xs px-1.5 py-0.5 rounded ${model.keySource === "user"
+                          ? "bg-green-800 text-green-100"
+                          : "bg-blue-800 text-blue-100"
+                          }`}
                       >
-                        {model.keySource === "user" ? "Your Key" : "Server"}
+                        {model.keySource === "user" ? "user" : "Server"}
                       </span>
                     )}
                   </div>

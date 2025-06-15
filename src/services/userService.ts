@@ -1,3 +1,10 @@
+import prisma from "@/app/lib/db/db"; // Adjust the import path based on your setup
+
+type UserApiKeyResult = {
+    provider: string;
+    apiKey: string;
+};
+
 /**
  * Gets all API keys saved by the user
  * @param userId The user's ID
@@ -5,20 +12,23 @@
  */
 export async function getUserApiKeys(userId: string): Promise<Record<string, string>> {
     try {
-        // This is where you'd query your database or API for the user's saved keys
-        // Example implementation with a database call:
-        // const keys = await db.apiKeys.findMany({ where: { userId } });
+        const userApiKeys = await prisma.userApiKey.findMany({
+            where: {
+                userId: userId,
+            },
+            select: {
+                provider: true,
+                apiKey: true,
+            },
+        });
 
-        // For now, we'll simulate fetching from localStorage if in the browser
-        if (typeof window !== 'undefined') {
-            const savedKeys = localStorage.getItem(`user_${userId}_api_keys`);
-            if (savedKeys) {
-                return JSON.parse(savedKeys);
-            }
-        }
+        // Convert array to object with provider as key
+        const apiKeysMap: Record<string, string> = {};
+        userApiKeys.forEach((key: UserApiKeyResult) => {
+            apiKeysMap[key.provider] = key.apiKey;
+        });
 
-        // If no keys found or server-side
-        return {};
+        return apiKeysMap;
     } catch (error) {
         console.error("Error fetching user API keys:", error);
         return {};
@@ -37,23 +47,46 @@ export async function saveUserApiKey(
     apiKey: string
 ): Promise<void> {
     try {
-        // This is where you'd save to your database
-        // Example implementation with a database call:
-        // await db.apiKeys.upsert({
-        //   where: { userId_provider: { userId, provider } },
-        //   update: { apiKey },
-        //   create: { userId, provider, apiKey },
-        // });
-
-        // For now, we'll simulate saving to localStorage if in the browser
-        if (typeof window !== 'undefined') {
-            const savedKeys = localStorage.getItem(`user_${userId}_api_keys`) || '{}';
-            const keys = JSON.parse(savedKeys);
-            keys[provider] = apiKey;
-            localStorage.setItem(`user_${userId}_api_keys`, JSON.stringify(keys));
-        }
+        await prisma.userApiKey.upsert({
+            where: {
+                userId_provider: {
+                    userId: userId,
+                    provider: provider,
+                },
+            },
+            update: {
+                apiKey: apiKey,
+                updatedAt: new Date(),
+            },
+            create: {
+                userId: userId,
+                provider: provider,
+                apiKey: apiKey,
+            },
+        });
     } catch (error) {
         console.error("Error saving user API key:", error);
-        throw new Error("Failed to save API key");
+        throw error;
+    }
+}
+
+/**
+ * Deletes an API key for a provider
+ * @param userId The user's ID
+ * @param provider The provider name (e.g., "OpenAI")
+ */
+export async function deleteUserApiKey(userId: string, provider: string) {
+    try {
+        await prisma.userApiKey.delete({
+            where: {
+                userId_provider: {
+                    userId: userId,
+                    provider: provider,
+                },
+            },
+        });
+    } catch (error) {
+        console.error("Error deleting user API key:", error);
+        throw error;
     }
 }
