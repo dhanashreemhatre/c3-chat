@@ -79,7 +79,7 @@ export default function ChatInterface() {
   useEffect(() => {
     // This tells the browser we will handle content occlusion by the virtual keyboard.
     if ("virtualKeyboard" in navigator) {
-      (navigator as any).virtualKeyboard.overlaysContent = true;
+      (navigator as Navigator & { virtualKeyboard: { overlaysContent: boolean } }).virtualKeyboard.overlaysContent = true;
     }
   }, []);
   // --- END: VIRTUAL KEYBOARD HANDLING ---
