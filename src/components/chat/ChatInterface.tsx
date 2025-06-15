@@ -178,57 +178,54 @@ export default function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         <div className="flex flex-col h-screen max-w-6xl mx-auto w-full">
           {/* Header */}
-          <Card className="mx-2 sm:mx-2 lg:mx-4 mb-1 dark border-slate-700 backdrop-blur-sm shadow-2xl">
+          <Card className="mx-2 sm:mx-2 lg:mx-4 my-1 bg-transparent">
             <CardHeader className="pb-">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </Button>
+                <div className="flex justify-between gap-2 w-full">
+                  {/* Title And Menu */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
+                    >
+                      <Menu className="w-8 h-8" />
+                    </Button>
 
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-
-                  
                     <CardTitle className="text-xl text-slate-100">
                       C3Chat AI Assistant
                     </CardTitle>
+                  </div>
+                  {/* Logout and Settings */}
+                  <div className="flex items-center gap-2">
+                    {/* Logout Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                      title="Logout"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </Button>
+
+                    {/* Settings Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowSettings(true)}
+                      className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                      title="Settings"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex justify-end items-center gap-2">
-
-
-                  {/* Logout Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-
-                  {/* Settings Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowSettings(true)}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
             </CardHeader>
           </Card>
@@ -264,10 +261,6 @@ export default function ChatInterface() {
               <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
                 <div className="p-4 sm:p-6 space-y-4">
                   {(() => {
-                    // console.log("Render condition check:");
-                    // console.log("messages.length:", state.messages.length);
-                    // console.log("isLoading:", state.isLoading);
-                    // console.log("currentChatId:", state.currentChatId);
 
                     if (state.messages.length === 0 && !state.isLoading) {
                       // console.log("Showing EmptyState");
@@ -327,29 +320,7 @@ export default function ChatInterface() {
                             </div>
                           ))}
 
-                          {/* Loading indicator for new messages
-                          {state.isLoading && (
-                            <div className="flex justify-start">
-                              <div className="bg-slate-800 rounded-2xl p-4 max-w-xs">
-                                <div className="flex items-center space-x-2">
-                                  <div className="flex space-x-1">
-                                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                                    <div
-                                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                                      style={{ animationDelay: "0.1s" }}
-                                    ></div>
-                                    <div
-                                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                                      style={{ animationDelay: "0.2s" }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-slate-400 text-sm">
-                                    {state.messages.some(m => m.isStreaming) ? "Typing..." : "Thinking..."}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )} */}
+
                         </div>
                       );
                     }
@@ -416,7 +387,7 @@ export default function ChatInterface() {
                       <GlobeLock className="w-4 h-4" />
                     )}
                   </Button>
-                                    {/* Share Chat */}
+                  {/* Share Chat */}
                   {state.currentChatId && (
                     <Button
                       variant="ghost"
@@ -428,8 +399,8 @@ export default function ChatInterface() {
                       <Share2 className="w-4 h-4" />
                     </Button>
                   )}
-        
-                  <ModelSelector/>
+
+                  <ModelSelector />
                 </div>
 
                 {/* Chat info */}
@@ -510,8 +481,10 @@ function EmptyState({
   return (
     <div className="flex items-center justify-center h-full text-slate-400">
       <div className="text-center max-w-2xl px-4">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/10">
-          <Bot className="w-10 h-10 text-blue-400" />
+        <div className="hidden sm:block">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/10">
+            <Bot className="w-10 h-10 text-blue-400" />
+          </div>
         </div>
 
         <h3 className="text-xl font-semibold text-slate-200 mb-2">

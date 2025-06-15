@@ -58,7 +58,7 @@ export const CHAT_MODELS: ChatModel[] = [
 ];
 
 export const MODEL_CAPABILITIES = {
-    "gemini-2-flash": {
+    "gemini-2.0-flash": {
         maxTokens: 1048576,
         supportedModes: ["text", "image", "video"],
         pricing: {
@@ -164,7 +164,7 @@ export const PROVIDER_INFO = {
     },
 };
 
-export const DEFAULT_MODEL = "gemini-2-flash";
+export const DEFAULT_MODEL = "gemini-2.0-flash";
 
 // Model selection preferences
 export const MODEL_RECOMMENDATIONS = {

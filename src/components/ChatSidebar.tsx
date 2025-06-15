@@ -150,7 +150,7 @@ export default function ChatSidebar({
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden`}
+        } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden rounded-r-lg`}
       >
         <Card className="h-full dark rounded-none border-0 flex flex-col overflow-hidden">
           <CardHeader className="pb-4 border-b border-slate-700 flex-shrink-0">

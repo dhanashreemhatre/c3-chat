@@ -174,28 +174,28 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                 value="general"
                                 className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
-                                <Settings className="w-4 h-4 mr-2" />
+                                <Settings className="hidden sm:block w-4 h-4 mr-2" />
                                 General
                             </TabsTrigger>
                             <TabsTrigger
                                 value="api-keys"
                                 className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
-                                <Key className="w-4 h-4 mr-2" />
+                                <Key className="hidden sm:block w-4 h-4 mr-2" />
                                 API Keys
                             </TabsTrigger>
                             <TabsTrigger
                                 value="appearance"
                                 className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
-                                <Palette className="w-4 h-4 mr-2" />
+                                <Palette className="hidden sm:block w-4 h-4 mr-2" />
                                 Appearance
                             </TabsTrigger>
                             <TabsTrigger
                                 value="data"
                                 className="data-[state=active]:dark data-[state=active]:text-slate-100"
                             >
-                                <Trash2 className="w-4 h-4 mr-2" />
+                                <Trash2 className="hidden sm:block w-4 h-4 mr-2" />
                                 Data
                             </TabsTrigger>
                         </TabsList>
