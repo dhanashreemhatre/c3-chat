@@ -11,14 +11,20 @@ import {
 import { getMessagesByChatId } from "@/app/lib/db/message";
 import { getUserApiKeys, getUserByEmail } from "@/app/lib/db/user";
 import { prisma } from "@/app/lib/db/db";
-import { webSearch } from "@/app/lib/websearch"; // We'll define this helper
+import { webSearch } from "@/app/lib/websearch";
 
 export async function POST(req: Request) {
+  console.log("=== API ROUTE START ===");
+
   const session = await auth();
-  console.log("Session:", session);
+  console.log("Session user:", session?.user?.email);
+
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const body = await req.json();
+  console.log("Request body:", JSON.stringify(body, null, 2));
 
   const {
     messages,
@@ -27,20 +33,22 @@ export async function POST(req: Request) {
     chatId,
     title,
     search = false,
-  } = await req.json();
+    stream = true, // Enable streaming by default
+  } = body;
+
   const users = await getUserByEmail(session.user.email);
-  // Check for user API key
   if (!users) {
+    console.log("User not found");
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-  const userApiKeys = await getUserApiKeys(users.id);
 
-  // Find the API key for the specific provider
+  console.log("Found user:", users.id);
+
+  const userApiKeys = await getUserApiKeys(users.id);
   const userApiKey = userApiKeys.find((key) => key.provider === provider);
 
   let useOwnKey = false;
   if (!userApiKey) {
-    // Check free usage
     const user = await prisma.user.findUnique({ where: { id: users.id } });
     if ((user?.freeChatCount ?? 0) >= 10) {
       return NextResponse.json(
@@ -54,23 +62,22 @@ export async function POST(req: Request) {
   }
 
   let currentChatId = chatId;
-  // If no chatId, create a new chat
   if (!currentChatId) {
+    console.log("Creating new chat");
     const chat = await createChat(users.id, title);
     currentChatId = chat.id;
+    console.log("Created chat with ID:", currentChatId);
   }
 
-  // Save user message
   const userMessage = messages[messages.length - 1];
-  await addMessage(currentChatId, "user", userMessage.content, provider); // <-- Add this line
+  console.log("Saving user message:", userMessage.content);
+  await addMessage(currentChatId, "user", userMessage.content, provider);
 
   let searchResults = null;
   if (search) {
-    // Use the last user message as the search query
     searchResults = await webSearch(userMessage.content);
   }
 
-  // Optionally, prepend or append search results to the messages for the LLM
   let messagesForLLM = messages;
   if (searchResults) {
     messagesForLLM = [
@@ -82,20 +89,17 @@ export async function POST(req: Request) {
     ];
   }
 
-  // If using own key, increment freeChatCount
   if (useOwnKey) {
     try {
       await prisma.user.update({
-        where: { id: session.user.id },
+        where: { id: users.id },
         data: { freeChatCount: { increment: 1 } },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      // If user doesn't exist, create it
       if (error.code === "P2025") {
         await prisma.user.create({
           data: {
-            id: session.user.id,
+            id: users.id,
             email: session.user.email,
             name: session.user.name,
             freeChatCount: 1,
@@ -107,29 +111,99 @@ export async function POST(req: Request) {
     }
   }
 
-  // Initialize AI handler with the pre-mapped values
-  console.log(`Initializing AI handler with ${provider}/${model}`);
   const aiHandler = new AIHandler({
     provider,
     model,
-    apiKey: userApiKey?.apiKey, // Use user's key if present
+    apiKey: userApiKey?.apiKey,
   });
 
   try {
-    // Process the chat request
-    console.log("Processing chat with AI handler");
-    const reply = await aiHandler.chat(messagesForLLM);
+    // If streaming is requested, return a streaming response
+    if (stream) {
+      console.log("Starting streaming response");
+      const encoder = new TextEncoder();
+      let fullResponse = "";
 
-    // Save AI reply
-    await addMessage(currentChatId, "assistant", reply, provider);
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Send initial metadata
+            const initialData = {
+              type: "metadata",
+              chatId: currentChatId,
+              searchResults,
+            };
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(initialData)}\n\n`)
+            );
 
-    return NextResponse.json({
-      reply,
-      chatId: currentChatId,
-      searchResults,
-    });
+            // Get streaming response from AI
+            console.log("Getting streaming response from AI handler");
+            const stream = aiHandler.chatStream(messagesForLLM);
+
+            for await (const chunk of stream) {
+              console.log("Received chunk:", chunk);
+              fullResponse += chunk;
+              const data = {
+                type: "content",
+                content: chunk,
+                fullContent: fullResponse,
+              };
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+              );
+            }
+
+            // Save the complete response to database
+            console.log("Saving complete response to database");
+            await addMessage(currentChatId, "assistant", fullResponse, provider);
+
+            // Send completion signal
+            const completionData = {
+              type: "done",
+              fullContent: fullResponse,
+            };
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(completionData)}\n\n`)
+            );
+
+            console.log("Streaming completed successfully");
+            controller.close();
+          } catch (error) {
+            console.error("Streaming error:", error);
+            const errorData = {
+              type: "error",
+              error: "Failed to get AI response.",
+            };
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
+            );
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(readableStream, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    } else {
+      // Non-streaming response (fallback)
+      console.log("Using non-streaming response");
+      const reply = await aiHandler.chat(messagesForLLM);
+      await addMessage(currentChatId, "assistant", reply, provider);
+
+      return NextResponse.json({
+        reply,
+        chatId: currentChatId,
+        searchResults,
+      });
+    }
   } catch (error) {
-    console.error(error);
+    console.error("=== API ROUTE ERROR ===", error);
     return NextResponse.json(
       { error: "Failed to get AI response." },
       { status: 500 },
@@ -157,14 +231,14 @@ export async function GET(req: Request) {
       );
     }
     const messages = await getMessagesByChatId(chatId);
-    console.log("Fetched messages:", messages);
+    // console.log("Fetched messages:", messages);
     return NextResponse.json({ messages });
   } else {
     // Fetch all chats for the user
     try {
-      console.log("Fetching chats for user:", session.user.id);
+      // console.log("Fetching chats for user:", session.user.id);
       const chats = await getChatsByUser(session.user.id);
-      console.log("Fetched chats:", chats);
+      // console.log("Fetched chats:", chats);
       return NextResponse.json({ chats });
     } catch (error) {
       console.error(error);

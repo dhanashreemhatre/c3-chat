@@ -34,8 +34,6 @@ export class AIHandler {
 
     console.log(`AI Handler initializing with provider: ${this.provider}, model: ${this.model}`);
 
-    // No need for mapping here since we're receiving already mapped values
-
     switch (this.provider) {
       case "openai":
         console.log(`Using OpenAI model: ${this.model}`);
@@ -43,6 +41,7 @@ export class AIHandler {
           openAIApiKey: this.apiKey || process.env.OPENAI_API_KEY!,
           modelName: this.model,
           temperature: 0.5,
+          streaming: true,
         });
         break;
 
@@ -52,6 +51,7 @@ export class AIHandler {
           anthropicApiKey: this.apiKey || process.env.ANTHROPIC_API_KEY!,
           modelName: this.model,
           temperature: 0.5,
+          streaming: true,
         });
         break;
 
@@ -61,6 +61,7 @@ export class AIHandler {
           apiKey: this.apiKey || process.env.GOOGLE_API_KEY!,
           model: this.model,
           temperature: 0.5,
+          streaming: true,
         });
         break;
 
@@ -80,12 +81,44 @@ export class AIHandler {
     return response.text;
   }
 
+  // Real streaming implementation using LangChain's streaming
+  async *chatStream(messages: ChatCompletionRequestMessage[]): AsyncIterable<string> {
+    console.log("AI Handler chatStream called with real streaming:", {
+      provider: this.provider,
+      model: this.model,
+      messagesCount: messages.length
+    });
+
+    const langchainMessages = messages.map((msg) => {
+      if (msg.role === "system") return new SystemMessage(msg.content);
+      if (msg.role === "user") return new HumanMessage(msg.content);
+      return new HumanMessage(msg.content);
+    });
+
+    try {
+      // Use LangChain's streaming capability
+      const stream = await this.chatModel.stream(langchainMessages);
+
+      for await (const chunk of stream) {
+        // Extract the content from the chunk
+        const content = chunk.content;
+        if (content && typeof content === 'string') {
+          console.log("Streaming chunk:", content);
+          yield content;
+        }
+      }
+    } catch (error) {
+      console.error("Error in chatStream:", error);
+      throw error;
+    }
+  }
+
   async generateImage(prompt: string) {
     const executor = await initializeAgentExecutorWithOptions(
-      [imageGenTool], // Add more tools as needed
+      [imageGenTool],
       this.chatModel,
       {
-        agentType: "openai-functions", // or "openai-tools"
+        agentType: "openai-functions",
         verbose: true,
       }
     );
@@ -93,14 +126,15 @@ export class AIHandler {
     const result = await executor.call({
       input: prompt,
     });
-    return result.output; // Will include the image URL if tool was used
+    return result.output;
   }
+
   async runTool(toolName: string, input: string) {
     const executor = await initializeAgentExecutorWithOptions(
-      [imageGenTool], // Add more tools as needed
+      [imageGenTool],
       this.chatModel,
       {
-        agentType: "openai-functions", // or "openai-tools"
+        agentType: "openai-functions",
         verbose: true,
       }
     );
@@ -109,6 +143,6 @@ export class AIHandler {
       input,
       toolName,
     });
-    return result.output; // Will include the tool's output
+    return result.output;
   }
 }

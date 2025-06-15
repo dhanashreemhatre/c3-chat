@@ -79,9 +79,9 @@ export default function ChatInterface() {
 
   // Handle sending messages
   const handleSendMessage = async () => {
-    console.log("handleSendMessage called with inputValue:", inputValue);
-    console.log("Current messages before sending:", state.messages);
-    console.log("Current loading state:", state.isLoading);
+    // console.log("handleSendMessage called with inputValue:", inputValue);
+    // console.log("Current messages before sending:", state.messages);
+    // console.log("Current loading state:", state.isLoading);
 
     if (!inputValue.trim() || state.isLoading) return;
 
@@ -233,9 +233,8 @@ export default function ChatInterface() {
                     variant="ghost"
                     size="icon"
                     onClick={toggleSearch}
-                    className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${
-                      state.searchEnabled ? "text-green-400" : ""
-                    }`}
+                    className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${state.searchEnabled ? "text-green-400" : ""
+                      }`}
                     title={
                       state.searchEnabled
                         ? "Disable Web Search"
@@ -350,13 +349,13 @@ export default function ChatInterface() {
               <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
                 <div className="p-4 sm:p-6 space-y-4">
                   {(() => {
-                    console.log("Render condition check:");
-                    console.log("messages.length:", state.messages.length);
-                    console.log("isLoading:", state.isLoading);
-                    console.log("currentChatId:", state.currentChatId);
+                    // console.log("Render condition check:");
+                    // console.log("messages.length:", state.messages.length);
+                    // console.log("isLoading:", state.isLoading);
+                    // console.log("currentChatId:", state.currentChatId);
 
                     if (state.messages.length === 0 && !state.isLoading) {
-                      console.log("Showing EmptyState");
+                      // console.log("Showing EmptyState");
                       return (
                         <EmptyState
                           currentModel={currentModel}
@@ -373,7 +372,7 @@ export default function ChatInterface() {
                       state.isLoading &&
                       state.currentChatId
                     ) {
-                      console.log("Showing chat loading screen");
+                      // console.log("Showing chat loading screen");
                       return (
                         <div className="flex items-center justify-center h-full">
                           <div className="flex flex-col items-center space-y-4">
@@ -395,11 +394,11 @@ export default function ChatInterface() {
                         </div>
                       );
                     } else {
-                      console.log(
-                        "Showing messages area with",
-                        state.messages.length,
-                        "messages",
-                      );
+                      // console.log(
+                      //   "Showing messages area with",
+                      //   state.messages.length,
+                      //   "messages",
+                      // );
                       return (
                         <div className="space-y-6">
                           {state.messages.map((message, index) => (
@@ -413,7 +412,7 @@ export default function ChatInterface() {
                             </div>
                           ))}
 
-                          {/* Loading indicator for new messages */}
+                          {/* Loading indicator for new messages
                           {state.isLoading && (
                             <div className="flex justify-start">
                               <div className="bg-slate-800 rounded-2xl p-4 max-w-xs">
@@ -430,12 +429,12 @@ export default function ChatInterface() {
                                     ></div>
                                   </div>
                                   <span className="text-slate-400 text-sm">
-                                    Thinking...
+                                    {state.messages.some(m => m.isStreaming) ? "Typing..." : "Thinking..."}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                          )}
+                          )} */}
                         </div>
                       );
                     }
