@@ -11,13 +11,12 @@ import {
   Sparkles,
   Menu,
   Globe,
-  GlobeLock, // Changed from GlobeLock
+  GlobeLock, 
   Upload,
-  AlertCircle,
   Key,
   Share2,
   LogOut,
-  Settings, // Import Settings icon
+  Settings,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -184,14 +183,14 @@ export default function ChatInterface() {
         <div className="flex flex-col h-screen max-w-6xl mx-auto w-full">
           {/* Header */}
           <Card className="m-2 sm:m-2 lg:m-4 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl">
-            <CardHeader className="pb-1">
+            <CardHeader className="pb-">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800 md:hidden"
+                    className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
                   >
                     <Menu className="w-5 h-5" />
                   </Button>

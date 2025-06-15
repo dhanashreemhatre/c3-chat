@@ -57,12 +57,12 @@ export default function ModelSelector() {
               )}
             </div>
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700 max-w-[280px] md:max-w-[350px]">
+          <SelectContent className="dark border-slate-700 max-w-[280px] md:max-w-[350px]">
             {availableModels.map((model) => (
               <SelectItem
                 key={model.id}
                 value={model.id}
-                className="hover:bg-slate-700 focus:bg-slate-700"
+                className="hover:dark focus:dark"
               >
                 <div className="flex flex-col items-start w-full">
                   <div className="flex items-center justify-between w-full">

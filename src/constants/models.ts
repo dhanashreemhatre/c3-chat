@@ -2,7 +2,7 @@ import { ChatModel } from "../types/chat";
 
 export const CHAT_MODELS: ChatModel[] = [
     {
-        id: "gemini-2-flash",
+        id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
         provider: "Google",
         description: "Fast and efficient AI model with multimodal capabilities",

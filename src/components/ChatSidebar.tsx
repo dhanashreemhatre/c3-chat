@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   MessageSquare,
-  Plus,
   Trash2,
   Share2,
   X,
@@ -167,7 +166,7 @@ export default function ChatSidebar({
                                     onClick={() =>
                                         setShowSettings(!showSettings)
                                     }
-                                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                                    className="text-slate-400 hover:text-slate-100 hover:dark"
                                 >
                                     <Settings className="w-4 h-4" />
                                 </Button> */}
@@ -175,7 +174,7 @@ export default function ChatSidebar({
                   variant="ghost"
                   size="icon"
                   onClick={onToggleAction}
-                  className="text-slate-400 hover:text-slate-100 hover:bg-slate-800 md:hidden"
+                  className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -187,7 +186,6 @@ export default function ChatSidebar({
               onClick={handleNewChat}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
             >
-              <Plus className="w-4 h-4 mr-2" />
               New Chat
             </Button>
 
@@ -198,7 +196,7 @@ export default function ChatSidebar({
                 placeholder="Search chats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-800/50 border-slate-600 text-slate-100 placeholder-slate-400"
+                className="pl-10 dark/50 border-slate-600 text-slate-100 placeholder-slate-400"
               />
             </div>
           </CardHeader>
@@ -230,8 +228,8 @@ export default function ChatSidebar({
                               key={chat.id}
                               onClick={() => handleChatClick(chat.id)}
                               className={`
-            group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-slate-800/70
-            ${state.currentChatId === chat.id ? "bg-slate-800 border border-blue-500/30" : "hover:bg-slate-800/50"}
+            group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:dark/70
+            ${state.currentChatId === chat.id ? "dark border border-blue-500/30" : "hover:dark/50"}
         `}
                             >
                               <div className="w-[70%] min-w-0 pr-2">
@@ -300,7 +298,7 @@ export default function ChatSidebar({
       {/* Share Token Modal */}
       {shareToken && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md bg-slate-800 border-slate-700">
+          <Card className="w-full max-w-md dark border-slate-700">
             <CardHeader>
               <CardTitle className="text-slate-100">Chat Shared!</CardTitle>
             </CardHeader>
@@ -309,7 +307,7 @@ export default function ChatSidebar({
                 Your chat has been shared. The link has been copied to your
                 clipboard.
               </p>
-              <div className="bg-slate-700 p-3 rounded text-sm text-slate-300 break-all mb-4">
+              <div className="dark p-3 rounded text-sm text-slate-300 break-all mb-4">
                 {`${window.location.origin}/shared/${shareToken}`}
               </div>
               <Button onClick={() => setShareToken(null)} className="w-full">
