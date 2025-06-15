@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getUserApiKeys } from "@/services/userService";
-
+import { auth } from "@/app/auth";
+import { getUserByEmail } from "@/app/lib/db/user";
 type ModelInfo = {
   provider: string;
   id: string;
@@ -212,6 +213,7 @@ async function fetchAllAvailableModels(
 
       if (provider === "google" && (userKey || serverKey)) {
         const key = userKey || serverKey;
+        console.log("userkey :", userKey, "serverkey: ", serverKey,);
         if (key) {
           const models = await fetchGoogleGeminiModels(key);
           allModels.push(
@@ -230,10 +232,27 @@ async function fetchAllAvailableModels(
   return allModels;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const userId = request.headers.get("user-id") || null;
-    const userApiKeys = userId ? await getUserApiKeys(userId) : {};
+    console.log("=== MODELS API ROUTE START ===");
+
+    const session = await auth();
+    console.log("Session user:", session?.user?.email);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user from database using email from session
+    const user = await getUserByEmail(session.user.email);
+    if (!user) {
+      console.log("User not found");
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    console.log("Fetching models for userId:", user.id);
+    const userApiKeys = await getUserApiKeys(user.id);
+    console.log("userApiKeys:", userApiKeys);
 
     const models = await fetchAllAvailableModels(userApiKeys);
     // console.log("models:", models);
