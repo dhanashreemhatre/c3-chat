@@ -8,7 +8,6 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
-  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
@@ -25,7 +24,7 @@ export function MessageBubble({
   message,
   onCopy,
   onReaction,
-  onShare,
+  // onShare,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   // const [showActions, setShowActions] = useState(false);
@@ -108,8 +107,8 @@ export function MessageBubble({
   return (
     <div
       className={`group flex gap-3 mb-6 animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}
-      // onMouseEnter={() => setShowActions(true)}
-      // onMouseLeave={() => setShowActions(false)}
+    // onMouseEnter={() => setShowActions(true)}
+    // onMouseLeave={() => setShowActions(false)}
     >
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/10">
@@ -125,7 +124,7 @@ export function MessageBubble({
             isUser
               ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-auto transform hover:scale-[1.02]"
               : "bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
-          }`}
+            }`}
         >
           {/* Message content */}
           <div
@@ -136,56 +135,55 @@ export function MessageBubble({
           />
 
           {/* Action buttons */}
-          
-            <div
-              className={`mt-2 flex items-center gap-2 opacity-100 transition-opacity ${
-                isUser ? "justify-end" : "justify-start"
+
+          <div
+            className={`mt-2 flex items-center gap-2 opacity-100 transition-opacity ${isUser ? "justify-end" : "justify-start"
               }`}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopy}
+              className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+              title="Copy message"
             >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCopy}
-                className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
-                title="Copy message"
-              >
-                {copied ? (
-                  <Check className="w-3 h-3" />
-                ) : (
-                  <Copy className="w-3 h-3" />
-                )}
-              </Button>
-              {copied && (
-                <span className="text-xs text-green-400 animate-fade-in">
-                  Copied!
-                </span>
+              {copied ? (
+                <Check className="w-3 h-3" />
+              ) : (
+                <Copy className="w-3 h-3" />
               )}
+            </Button>
+            {copied && (
+              <span className="text-xs text-green-400 animate-fade-in">
+                Copied!
+              </span>
+            )}
 
-              {!isUser && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleReaction("like")}
-                    className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-green-400"
-                    title="Like this response"
-                  >
-                    <ThumbsUp className="w-3 h-3" />
-                  </Button>
+            {!isUser && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleReaction("like")}
+                  className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-green-400"
+                  title="Like this response"
+                >
+                  <ThumbsUp className="w-3 h-3" />
+                </Button>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleReaction("dislike")}
-                    className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-red-400"
-                    title="Dislike this response"
-                  >
-                    <ThumbsDown className="w-3 h-3" />
-                  </Button>
-                </>
-              )}
-            </div>
-          
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleReaction("dislike")}
+                  className="h-6 w-6 bg-black/20 hover:bg-black/40 text-white/70 hover:text-red-400"
+                  title="Dislike this response"
+                >
+                  <ThumbsDown className="w-3 h-3" />
+                </Button>
+              </>
+            )}
+          </div>
+
         </div>
 
         {/* Timestamp */}
