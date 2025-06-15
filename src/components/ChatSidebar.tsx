@@ -9,9 +9,10 @@ import {
   MessageSquare,
   Trash2,
   Share2,
-  X,
   AlertCircle,
   Search,
+  PanelLeftOpen,
+  PanelRightOpen,
 } from "lucide-react";
 import { useChatContext } from "../contexts/ChatContext";
 import { Chat } from "../services/chatService";
@@ -39,6 +40,7 @@ export default function ChatSidebar({
   const [apiKeyValue, setApiKeyValue] = useState("");
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false); // <-- Add this line
 
   const filteredChats = state.chats.filter((chat) =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -148,47 +150,76 @@ export default function ChatSidebar({
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-67 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden rounded-r-lg`}
+        className={`
+          fixed inset-y-0 left-0 z-50
+          ${collapsed ? "w-16" : "w-67"}
+          bg-background border-r border-border
+          transform transition-all duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden rounded-r-lg
+        `}
+        style={{
+          transitionProperty: "width,transform",
+        }}
       >
-        <Card className="h-full dark rounded-none border-0 flex flex-col overflow-hidden">
-          <CardHeader className="pb-4 border-b border-slate-700 flex-shrink-0">
+        <Card className="h-full dark rounded-none border-1 flex flex-col overflow-hidden">
+          <CardHeader className={`pb-4 border-b border-border flex-shrink-0 ${collapsed ? "items-center" : ""}`}>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-slate-100 flex items-center gap-2">
+              <CardTitle className={`text-lg text-slate-100 flex items-center gap-2 ${collapsed ? "hidden" : ""}`}>
                 <MessageSquare className="w-5 h-5" />
                 Chat History
               </CardTitle>
               <div className="flex items-center gap-2">
+                {/* Collapse/Expand Button (always visible) */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCollapsed((c) => !c)}
+                  className="text-slate-400 hover:text-slate-100 hover:dark"
+                  title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {collapsed ? (
+                    // Right arrow for expand
+                    <PanelLeftOpen className="hidden sm:block h-20 w-20" />
+                  ) : (
+                    // Left arrow for collapse
+                    <PanelRightOpen className="hidden sm:block h-20 w-20" />
+                  )}
+                </Button>
+                {/* Close button (mobile only, hidden on desktop) */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onToggleAction}
-                  className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
+                  className={`text-slate-400 hover:text-slate-100 hover:dark md:hidden ${collapsed ? "hidden" : ""}`}
                 >
-                  <X className="w-4 h-4" />
+                  <PanelRightOpen className="w-8 h-8" />
                 </Button>
               </div>
             </div>
 
             {/* New Chat Button */}
-            <Button
-              onClick={handleNewChat}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
-            >
-              New Chat
-            </Button>
+            {!collapsed && (
+              <Button
+                onClick={handleNewChat}
+                className="bg-foreground w-full text-black border-1"
+              >
+                New Chat
+              </Button>
+            )}
 
             {/* Search */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-              <Input
-                placeholder="Search chats..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 dark/50 border-slate-600 text-slate-100 placeholder-slate-400"
-              />
-            </div>
+            {!collapsed && (
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Search chats..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 dark/50 border-border text-slate-100 placeholder-slate-400"
+                />
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="p-0 flex-1 flex flex-col min-h-0">
@@ -198,70 +229,81 @@ export default function ChatSidebar({
                 <div className="p-2">
                   {state.isLoadingChats ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-border"></div>
                     </div>
                   ) : Object.keys(chatGroups).length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">
-                      <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No chats yet</p>
-                      <p className="text-xs">Start a new conversation</p>
-                    </div>
+                    !collapsed && (
+                      <div className="text-center py-8 text-slate-400">
+                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No chats yet</p>
+                        <p className="text-xs">Start a new conversation</p>
+                      </div>
+                    )
                   ) : (
                     Object.entries(chatGroups).map(([dateGroup, chats]) => (
-                      <div key={dateGroup} className="mb-4">
-                        <h4 className="text-xs font-semibold text-slate-400 mb-2 px-2">
-                          {dateGroup}
-                        </h4>
+                      <div key={dateGroup} className={`mb-4 ${collapsed ? "px-1" : ""}`}>
+                        {!collapsed && (
+                          <h4 className="text-xs font-semibold text-slate-400 mb-2 px-2">
+                            {dateGroup}
+                          </h4>
+                        )}
                         <div className="space-y-1">
                           {chats.map((chat) => (
                             <div
                               key={chat.id}
                               onClick={() => handleChatClick(chat.id)}
                               className={`
-            group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:dark/70
-            ${state.currentChatId === chat.id ? "dark border border-blue-500/30" : "hover:dark/50"}
-        `}
+                                group flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:dark/70
+                                ${state.currentChatId === chat.id ? "dark border-0 border-border" : "hover:dark/50"}
+                                ${collapsed ? "justify-center" : ""}
+                              `}
                             >
-                              <div className="w-[70%] min-w-0 pr-1">
-                                <p className="text-sm font-medium text-slate-200 truncate">
-                                  {(chat.title || "Untitled Chat").length > 25
-                                    ? `${(chat.title || "Untitled Chat").substring(0, 25)}...`
-                                    : chat.title || "Untitled Chat"}
+                              <div className={`${collapsed ? "w-full flex justify-center" : "w-[70%] min-w-0 pr-1"}`}>
+                                <p className={`text-sm font-medium text-slate-200 truncate ${collapsed ? "text-center" : ""}`}>
+                                  {!collapsed
+                                    ? (chat.title || "Untitled Chat").length > 25
+                                      ? `${(chat.title || "Untitled Chat").substring(0, 25)}...`
+                                      : chat.title || "Untitled Chat"
+                                    : null}
                                 </p>
-                                <p className="text-xs text-slate-400 truncate">
-                                  {new Date(chat.updatedAt).toLocaleTimeString(
-                                    [],
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
-                                  )}
-                                </p>
+                                {!collapsed && (
+                                  <p className="text-xs text-slate-400 truncate">
+                                    {new Date(chat.updatedAt).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
+                                  </p>
+                                )}
                               </div>
 
-                              <div className="w-[30%] flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => handleShareChat(chat.id, e)}
-                                  className="h-6 w-6 text-slate-400 hover:text-blue-400 hover:bg-slate-700"
-                                >
-                                  <Share2 className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => handleDeleteChat(chat.id, e)}
-                                  disabled={isDeleting === chat.id}
-                                  className="h-6 w-6 text-slate-400 hover:text-red-400 hover:bg-slate-700"
-                                >
-                                  {isDeleting === chat.id ? (
-                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
-                                  ) : (
-                                    <Trash2 className="w-3 h-3" />
-                                  )}
-                                </Button>
-                              </div>
+                              {!collapsed && (
+                                <div className="w-[30%] flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => handleShareChat(chat.id, e)}
+                                    className="h-6 w-6 text-slate-400 hover:text-blue-400 hover:bg-slate-700"
+                                  >
+                                    <Share2 className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => handleDeleteChat(chat.id, e)}
+                                    disabled={isDeleting === chat.id}
+                                    className="h-6 w-6 text-slate-400 hover:text-red-400 hover:bg-slate-700"
+                                  >
+                                    {isDeleting === chat.id ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                                    ) : (
+                                      <Trash2 className="w-3 h-3" />
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -273,8 +315,8 @@ export default function ChatSidebar({
             </div>
 
             {/* Error Display */}
-            {state.error && (
-              <div className="p-4 border-t border-slate-700 flex-shrink-0">
+            {state.error && !collapsed && (
+              <div className="p-4 border-t border-border flex-shrink-0">
                 <div className="flex items-center gap-2 text-red-400 text-sm">
                   <AlertCircle className="w-4 h-4" />
                   <span>{state.error}</span>

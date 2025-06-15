@@ -221,7 +221,7 @@ export default function FileUpload({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] bg-slate-900 border-slate-700 flex flex-col">
+      <Card className="w-full max-w-4xl max-h-[90vh] dark border-slate-700 flex flex-col">
         <CardHeader className="pb-4 border-b border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ export default function FileUpload({
                           ? "bg-red-900/10 border-red-500/30"
                           : file.status === "ready"
                             ? "bg-green-900/10 border-green-500/30"
-                            : "bg-slate-800/30 border-slate-700"
+                            : "dark border-slate-700"
                       }`}
                     >
                       <div className="flex items-center justify-between">
