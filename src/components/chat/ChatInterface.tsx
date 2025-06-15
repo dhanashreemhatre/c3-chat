@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Send,
   Bot,
-  Sparkles,
   Menu,
   Globe,
   GlobeLock,
