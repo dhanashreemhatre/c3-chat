@@ -74,6 +74,17 @@ export default function ChatInterface() {
     }
   }, [state.isLoading]);
 
+  // --- START: VIRTUAL KEYBOARD HANDLING ---
+  // Add this useEffect to handle the virtual keyboard on mobile devices.
+  useEffect(() => {
+    // This tells the browser we will handle content occlusion by the virtual keyboard.
+    if ("virtualKeyboard" in navigator) {
+      (navigator as any).virtualKeyboard.overlaysContent = true;
+    }
+  }, []);
+  // --- END: VIRTUAL KEYBOARD HANDLING ---
+
+
   // Handle sending messages
   const handleSendMessage = async () => {
     // console.log("handleSendMessage called with inputValue:", inputValue);
@@ -169,7 +180,14 @@ export default function ChatInterface() {
   const currentModel = CHAT_MODELS.find((m) => m.id === state.selectedModel);
 
   return (
-    <div className="min-h-screen bg-black flex">
+    <div
+      className="bg-black flex min-h-[100dvh]" // Use dynamic viewport height
+      style={{
+        minHeight: "100dvh",
+        height: "100dvh",
+        boxSizing: "border-box",
+      }}
+    >
       {/* Sidebar */}
       <ChatSidebar
         isOpen={sidebarOpen}
@@ -177,8 +195,8 @@ export default function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        <div className="flex flex-col h-screen max-w-6xl mx-auto w-full">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <div className="flex flex-col h-[100dvh] max-w-6xl mx-auto w-full">
           {/* Header */}
           <Card className="mx-2 sm:mx-2 lg:mx-4 my-1 bg-transparent">
             <CardHeader className="pb-">
@@ -255,6 +273,7 @@ export default function ChatInterface() {
           )} */}
 
           {/* Chat Messages */}
+
           <Card className="flex-1 flex flex-col mx-2 sm:mx-2 lg:mx-4 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
             <CardContent className="flex-1 p-0 flex flex-col min-h-0">
               <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
@@ -327,88 +346,96 @@ export default function ChatInterface() {
                 </div>
               </ScrollArea>
 
-              {/* Input Area */}
-              <div className="p-4 sticky inset-x-0 bottom-0 z-20 pb-2 sm:p-4 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
-                <div className="flex gap-1 max-w-4xl mx-auto">
-                  <div className="flex-1 relative">
-                    <Input
-                      ref={inputRef}
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={
-                        state.searchEnabled
-                          ? "Ask me anything... (Web search enabled)"
-                          : "Type your message..."
-                      }
-                      disabled={state.isLoading}
-                      className="bg-slate-800/50 border-slate-600 text-slate-100 placeholder-slate-400 pr-12 h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                    />
+              <div
+                className="sticky inset-x-0 bottom-0 z-20 transition-all duration-200 ease-in-out"
+                style={{
+                  paddingBottom: "env(keyboard-inset-height, 0px)", // Add this for keyboard-aware padding
+                }}
+              >
+                {/* The original input area div, with sticky positioning classes removed. I've added a background color to ensure it's not transparent when pushed up. */}
+                <div className="p-4 sm:p-4 pb-2 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
+                  <div className="flex gap-1 max-w-4xl mx-auto">
+                    <div className="flex-1 relative">
+                      <Input
+                        ref={inputRef}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={
+                          state.searchEnabled
+                            ? "Ask me anything... (Web search enabled)"
+                            : "Type your message..."
+                        }
+                        disabled={state.isLoading}
+                        className="bg-slate-800/50 border-slate-600 text-slate-100 placeholder-slate-400 pr-12 h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!inputValue.trim() || state.isLoading}
+                      size="icon"
+                      className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
                   </div>
-
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || state.isLoading}
-                    size="icon"
-                    className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
-                </div>
-                <div className="flex items-center justify-start mt-1 text-xs text-slate-500">
-                  {/* File Upload Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowFileUpload(true)}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                    title="Upload Files"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </Button>
-
-                  {/* Search Toggle */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleSearch}
-                    className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${state.searchEnabled ? "text-green-400" : ""
-                      }`}
-                    title={
-                      state.searchEnabled
-                        ? "Disable Web Search"
-                        : "Enable Web Search"
-                    }
-                  >
-                    {state.searchEnabled ? (
-                      <Globe className="w-4 h-4" />
-                    ) : (
-                      <GlobeLock className="w-4 h-4" />
-                    )}
-                  </Button>
-                  {/* Share Chat */}
-                  {state.currentChatId && (
+                  <div className="flex items-center justify-start mt-1 text-xs text-slate-500">
+                    {/* File Upload Button */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={handleShareChat}
+                      onClick={() => setShowFileUpload(true)}
                       className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                      title="Share Chat"
+                      title="Upload Files"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Upload className="w-4 h-4" />
                     </Button>
-                  )}
 
-                  <ModelSelector />
-                </div>
+                    {/* Search Toggle */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleSearch}
+                      className={`text-slate-400 hover:text-slate-100 hover:bg-slate-800 ${state.searchEnabled ? "text-green-400" : ""
+                        }`}
+                      title={
+                        state.searchEnabled
+                          ? "Disable Web Search"
+                          : "Enable Web Search"
+                      }
+                    >
+                      {state.searchEnabled ? (
+                        <Globe className="w-4 h-4" />
+                      ) : (
+                        <GlobeLock className="w-4 h-4" />
+                      )}
+                    </Button>
+                    {/* Share Chat */}
+                    {state.currentChatId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleShareChat}
+                        className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                        title="Share Chat"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    )}
 
-                {/* Chat info */}
-                {state.currentChatId && (
-                  <div className="text-center text-xs text-slate-500 mt-1">
-                    Chat ID: {state.currentChatId}
+                    <ModelSelector />
                   </div>
-                )}
+
+                  {/* Chat info */}
+                  {state.currentChatId && (
+                    <div className="text-center text-xs text-slate-500 mt-1">
+                      Chat ID: {state.currentChatId}
+                    </div>
+                  )}
+                </div>
               </div>
+              {/* --- END: MODIFIED INPUT AREA --- */}
             </CardContent>
           </Card>
         </div>
@@ -478,51 +505,53 @@ function EmptyState({
   ];
 
   return (
-    <div className="flex items-center justify-center h-full text-slate-400">
-      <div className="text-center max-w-2xl px-4">
-        <div className="hidden sm:block">
+     <ScrollArea className="min-h-0 sm:h-full w-full flex">
+    <div className="flex items-center justify-center text-slate-400">
+     
+        <div className="text-center max-w-2xl px-4">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/10">
             <Bot className="w-10 h-10 text-blue-400" />
           </div>
-        </div>
 
-        <h3 className="text-xl font-semibold text-slate-200 mb-2">
-          Ready to Chat
-        </h3>
+          <h3 className="text-xl font-semibold text-slate-200 mb-2">
+            Ready to Chat
+          </h3>
 
-        <p className="text-slate-400 leading-relaxed mb-6">
-          Start a conversation with{" "}
-          <span className="text-blue-400 font-medium">
-            {currentModel?.name}
-          </span>
-          . Ask questions, get help, or just have a friendly chat!
-          {searchEnabled && (
-            <span className="block mt-2 text-green-400">
-              <Globe className="w-4 h-4 inline mr-1" />
-              Web search is enabled for real-time information
+          <p className="text-slate-400 leading-relaxed mb-6">
+            Start a conversation with{" "}
+            <span className="text-blue-400 font-medium">
+              {currentModel?.name}
             </span>
-          )}
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-          {suggestions.map((suggestion, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              onClick={() => onSuggestionClick(suggestion)}
-              className="text-left text-slate-300 border-slate-600 hover:bg-slate-800 hover:border-slate-500 p-3 h-auto whitespace-normal"
-            >
-              {suggestion}
-            </Button>
-          ))}
-        </div>
-
-        <div className="text-xs text-slate-500">
-          <p>
-            Tip: Use web search for current events and real-time information
+            . Ask questions, get help, or just have a friendly chat!
+            {searchEnabled && (
+              <span className="block mt-2 text-green-400">
+                <Globe className="w-4 h-4 inline mr-1" />
+                Web search is enabled for real-time information
+              </span>
+            )}
           </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+            {suggestions.map((suggestion, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                onClick={() => onSuggestionClick(suggestion)}
+                className="text-left text-slate-300 border-slate-600 hover:bg-slate-800 hover:border-slate-500 p-3 h-auto whitespace-normal"
+              >
+                {suggestion}
+              </Button>
+            ))}
+          </div>
+
+          <div className="text-xs text-slate-500">
+            <p>
+              Tip: Use web search for current events and real-time information
+            </p>
+          </div>
         </div>
-      </div>
+     
     </div>
+     </ScrollArea>
   );
 }
