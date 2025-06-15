@@ -95,8 +95,8 @@ export async function POST(req: Request) {
         where: { id: users.id },
         data: { freeChatCount: { increment: 1 } },
       });
-    } catch (error: any) {
-      if (error.code === "P2025") {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === "P2025") {
         await prisma.user.create({
           data: {
             id: users.id,
