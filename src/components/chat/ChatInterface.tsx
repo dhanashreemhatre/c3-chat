@@ -182,7 +182,7 @@ export default function ChatInterface() {
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex flex-col h-screen max-w-6xl mx-auto w-full">
           {/* Header */}
-          <Card className="m-2 sm:m-2 lg:m-4 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl">
+          <Card className="mx-2 sm:mx-2 lg:mx-4 mb-1 dark border-slate-700 backdrop-blur-sm shadow-2xl">
             <CardHeader className="pb-">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div className="flex items-center gap-2">
@@ -199,48 +199,14 @@ export default function ChatInterface() {
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
 
-                  <div>
+                  
                     <CardTitle className="text-xl text-slate-100">
                       C3Chat AI Assistant
                     </CardTitle>
-                    <p className="text-sm text-slate-400 mt-1">
-                      Powered by {currentModel?.name}
-                      {state.searchEnabled && (
-                        <span className="ml-2 inline-flex items-center gap-1">
-                          <Globe className="w-3 h-3" />
-                          Web Search
-                        </span>
-                      )}
-                    </p>
-                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex justify-end items-center gap-2">
 
-                  {/* API Key Manager */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowApiKeyManager(true)}
-                    className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                    title="Manage API Keys"
-                  >
-                    <Key className="w-4 h-4" />
-                  </Button>
-
-                  {/* Share Chat */}
-                  {state.currentChatId && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleShareChat}
-                      className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
-                      title="Share Chat"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  )}
-        
 
                   {/* Logout Button */}
                   <Button
@@ -452,6 +418,19 @@ export default function ChatInterface() {
                       <GlobeLock className="w-4 h-4" />
                     )}
                   </Button>
+                                    {/* Share Chat */}
+                  {state.currentChatId && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleShareChat}
+                      className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                      title="Share Chat"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  )}
+        
                   <ModelSelector/>
                 </div>
 
