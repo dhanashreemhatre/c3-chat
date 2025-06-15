@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Markdown from "react-markdown";
 import {
   Bot,
   User,
@@ -12,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
 import { formatTime } from "../utils/chat";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
 interface MessageBubbleProps {
   message: Message;
@@ -46,64 +49,6 @@ export function MessageBubble({
   };
 
 
-  const renderContent = (content: string) => {
-    // Simple markdown-like rendering
-    let processedContent = content;
-
-    // Bold text
-    processedContent = processedContent.replace(
-      /\*\*(.*?)\*\*/g,
-      "<strong>$1</strong>",
-    );
-
-    // Italic text
-    processedContent = processedContent.replace(/\*(.*?)\*/g, "<em>$1</em>");
-
-    // Code blocks
-    processedContent = processedContent.replace(
-      /```([\s\S]*?)```/g,
-      '<pre class="bg-sidebar p-3 rounded-lg my-2 overflow-x-auto"><code>$1</code></pre>',
-    );
-
-    // Inline code
-    processedContent = processedContent.replace(
-      /`([^`]+)`/g,
-      '<code class="bg-background px-1.5 py-0.5 rounded text-sm">$1</code>',
-    );
-
-    // Links
-    processedContent = processedContent.replace(
-      /(https?:\/\/[^\s]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline">$1</a>',
-    );
-
-    // Lists
-    processedContent = processedContent.replace(
-      /^- (.+)$/gm,
-      '<li class="ml-4">$1</li>',
-    );
-    processedContent = processedContent.replace(
-      /(<li.*<\/li>)/,
-      '<ul class="list-disc list-inside space-y-1">$1</ul>',
-    );
-
-    // Numbered lists
-    processedContent = processedContent.replace(
-      /^(\d+)\. (.+)$/gm,
-      '<li class="ml-4">$2</li>',
-    );
-    processedContent = processedContent.replace(
-      /(<li.*<\/li>)/g, // Removed 's' flag for compatibility with older targets
-      '<ol class="list-decimal list-inside space-y-1">$1</ol>',
-    );
-    // Ensure list regexes for ul and ol don't conflict if both are present or one after another.
-    // The current replacement might wrap individual li items in separate ul/ol.
-    // A more robust markdown parser would be better for complex cases.
-    // For simplicity, assuming lists are not immediately consecutive or nested in a way that breaks this.
-
-    return processedContent;
-  };
-
   return (
     <div
       className={`group flex gap-3 mb-6 animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}
@@ -129,10 +74,32 @@ export function MessageBubble({
           {/* Message content */}
           <div
             className="break-words whitespace-pre-wrap leading-relaxed prose prose-invert max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: renderContent(message.content),
-            }}
+          // dangerouslySetInnerHTML={{
+          //   __html: message.content,
+          // }}
           />
+          <Markdown
+         components={{
+          code({ className, children, ...rest }) {
+            const match = /language-(\w+)/.exec(className || "");
+            return match ? (
+              <SyntaxHighlighter
+                PreTag="div"
+                language={match[1]}
+                style={vscDarkPlus as any}
+                {...rest}
+                ref={null}
+              >
+                {String(children)}
+              </SyntaxHighlighter>
+            ) : (
+              <code {...rest} className={className}>
+                {children}
+              </code>
+            );
+          },
+        }}
+          >{message.content}</Markdown>
 
           {/* Action buttons */}
 
