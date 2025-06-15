@@ -8,13 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Send,
   Bot,
-  Menu,
   Globe,
   GlobeLock,
-  Upload,
+  Paperclip ,
   Share2,
   LogOut,
   Settings,
+  PanelLeftOpen,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -179,27 +179,36 @@ export default function ChatInterface() {
 
   const currentModel = CHAT_MODELS.find((m) => m.id === state.selectedModel);
 
+  // Only allow sidebar to open if it's not already open
+  const handleSidebarToggle = () => {
+    setSidebarOpen((prev) => !prev);
+  };
+
   return (
     <div
-      className="bg-black flex min-h-[100dvh]" // Use dynamic viewport height
+      className={`bg-black flex sm:min-h-0 min-h-[100dvh] h-[100dvh] sm:h-screen transition-all duration-300 ${
+        sidebarOpen ? "" : "w-full"
+      }`}
       style={{
-        minHeight: "100dvh",
-        height: "100dvh",
         boxSizing: "border-box",
       }}
     >
       {/* Sidebar */}
       <ChatSidebar
         isOpen={sidebarOpen}
-        onToggleAction={() => setSidebarOpen(!sidebarOpen)}
+        onToggleAction={handleSidebarToggle}
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <div className="flex flex-col h-[100dvh] max-w-6xl mx-auto w-full">
+      <div
+        className={`flex-1 flex flex-col min-w-0 min-h-0 transition-all duration-300 ${
+          sidebarOpen ? "" : "max-w-full"
+        }`}
+      >
+        <div className="flex flex-col h-full max-w-6xl mx-auto w-full">
           {/* Header */}
-          <Card className="mx-2 sm:mx-2 lg:mx-2 my-1 bg-transparent w-full">
-            <CardHeader className="pb-2">
+          <Card className="mx-2 sm:mx-2 lg:mx-2 my-0 bg-transparent w-full">
+            <CardHeader className="pb-1">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <div className="flex justify-between gap-2 w-full">
                   {/* Title And Menu */}
@@ -207,12 +216,13 @@ export default function ChatInterface() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      onClick={() => {
+                        if (!sidebarOpen) setSidebarOpen(true);
+                      }}
                       className="text-slate-400 hover:text-slate-100 hover:dark md:hidden"
                     >
-                      <Menu className="w-8 h-8" />
+                      <PanelLeftOpen className="w-8 h-8" />
                     </Button>
-
                     <CardTitle className="text-xl text-slate-100">
                       C3Chat AI Assistant
                     </CardTitle>
@@ -273,8 +283,7 @@ export default function ChatInterface() {
           )} */}
 
           {/* Chat Messages */}
-
-          <Card className="flex-1 flex flex-col mx-2 sm:mx-2 lg:mx-2 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
+          <Card className="flex-1 flex flex-col mx-2 sm:mx-2 lg:mx-2 mb-2 dark border-border backdrop-blur-sm shadow-2xl overflow-hidden">
             <CardContent className="flex-1 p-0 flex flex-col min-h-0 max-w-full">
               <ScrollArea className="flex-1 min-h-0 min-w-0" ref={scrollAreaRef}>
                 <div className="p-4 sm:p-6 space-y-4">
@@ -349,16 +358,16 @@ export default function ChatInterface() {
                   })()}
                 </div>
               </ScrollArea>
-
+              {/* Input area */}
               <div
                 className="sticky inset-x-0 bottom-0 z-20 transition-all duration-200 ease-in-out"
                 style={{
                   paddingBottom: "env(keyboard-inset-height, 0px)", // Add this for keyboard-aware padding
                 }}
               >
-                {/* The original input area div, with sticky positioning classes removed. I've added a background color to ensure it's not transparent when pushed up. */}
-                <div className="p-4 sm:p-4 pb-2 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
-                  <div className="flex gap-1 max-w-4xl mx-auto">
+                {/* Input Area */}
+                <div className="p-4 sm:p-4 pb-2 sm:pb-2 border-t border-border dark flex-shrink-0">
+                  <div className="flex gap-2 mx-auto w-full">
                     <div className="flex-1 relative">
                       <Input
                         ref={inputRef}
@@ -371,7 +380,7 @@ export default function ChatInterface() {
                             : "Type your message..."
                         }
                         disabled={state.isLoading}
-                        className="bg-slate-800/50 border-slate-600 text-slate-100 placeholder-slate-400 pr-12 h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="dark border-border text-slate-100 placeholder-slate-400 pr-12 h-10 sm:h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       />
                     </div>
 
@@ -379,13 +388,13 @@ export default function ChatInterface() {
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() || state.isLoading}
                       size="icon"
-                      className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                      className="h-10 sm:h-12 w-12 rounded-xl  shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                     >
                       <Send className="w-5 h-5" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-start mt-1 text-xs text-slate-500">
-                    {/* File Upload Button */}
+                    {/* File Paperclip  Button */}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -393,7 +402,7 @@ export default function ChatInterface() {
                       className="text-slate-400 hover:text-slate-100 hover:bg-slate-800"
                       title="Upload Files"
                     >
-                      <Upload className="w-4 h-4" />
+                      <Paperclip  className="w-4 h-4" />
                     </Button>
 
                     {/* Search Toggle */}
@@ -429,14 +438,14 @@ export default function ChatInterface() {
                     )}
 
                     <ModelSelector />
-                  </div>
 
                   {/* Chat info */}
                   {state.currentChatId && (
-                    <div className="text-center text-xs text-slate-500 mt-1">
+                    <div className="hidden sm:block text-center text-xs text-slate-500 mt-1">
                       Chat ID: {state.currentChatId}
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
               {/* --- END: MODIFIED INPUT AREA --- */}

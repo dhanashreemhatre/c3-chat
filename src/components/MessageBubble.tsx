@@ -62,13 +62,13 @@ export function MessageBubble({
     // Code blocks
     processedContent = processedContent.replace(
       /```([\s\S]*?)```/g,
-      '<pre class="bg-slate-800 p-3 rounded-lg my-2 overflow-x-auto"><code>$1</code></pre>',
+      '<pre class="bg-sidebar p-3 rounded-lg my-2 overflow-x-auto"><code>$1</code></pre>',
     );
 
     // Inline code
     processedContent = processedContent.replace(
       /`([^`]+)`/g,
-      '<code class="bg-slate-700 px-1.5 py-0.5 rounded text-sm">$1</code>',
+      '<code class="bg-background px-1.5 py-0.5 rounded text-sm">$1</code>',
     );
 
     // Links
@@ -122,8 +122,8 @@ export function MessageBubble({
         <div
           className={`rounded-2xl px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${ // Removed 'relative'
             isUser
-              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-auto transform hover:scale-[1.02]"
-              : "bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
+              ? "bg-foreground hover:bg-muted-foreground text-black ml-auto transform hover:scale-[1.02]"
+              : "bg-secondary from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
             }`}
         >
           {/* Message content */}
