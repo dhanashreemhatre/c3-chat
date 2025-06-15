@@ -181,10 +181,8 @@ export default function ChatInterface() {
 
   return (
     <div
-      className="bg-black flex min-h-[100dvh]" // Use dynamic viewport height
+      className="bg-black flex sm:min-h-0 min-h-[100dvh] h-[100dvh] sm:h-screen" // Use h-screen for full viewport height
       style={{
-        minHeight: "100dvh",
-        height: "100dvh",
         boxSizing: "border-box",
       }}
     >
@@ -196,7 +194,7 @@ export default function ChatInterface() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <div className="flex flex-col h-[100dvh] max-w-6xl mx-auto w-full">
+        <div className="flex flex-col h-full max-w-6xl mx-auto w-full">
           {/* Header */}
           <Card className="mx-2 sm:mx-2 lg:mx-2 my-1 bg-transparent w-full">
             <CardHeader className="pb-2">
@@ -273,7 +271,6 @@ export default function ChatInterface() {
           )} */}
 
           {/* Chat Messages */}
-
           <Card className="flex-1 flex flex-col mx-2 sm:mx-2 lg:mx-2 mb-2 dark border-slate-700 backdrop-blur-sm shadow-2xl overflow-hidden">
             <CardContent className="flex-1 p-0 flex flex-col min-h-0 max-w-full">
               <ScrollArea className="flex-1 min-h-0 min-w-0" ref={scrollAreaRef}>
@@ -349,7 +346,7 @@ export default function ChatInterface() {
                   })()}
                 </div>
               </ScrollArea>
-
+              {/* Input area */}
               <div
                 className="sticky inset-x-0 bottom-0 z-20 transition-all duration-200 ease-in-out"
                 style={{

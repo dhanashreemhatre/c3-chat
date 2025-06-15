@@ -122,8 +122,8 @@ export function MessageBubble({
         <div
           className={`rounded-2xl px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${ // Removed 'relative'
             isUser
-              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-auto transform hover:scale-[1.02]"
-              : "bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
+              ? "bg-foreground hover:bg-muted-foreground text-black ml-auto transform hover:scale-[1.02]"
+              : "bg-secondary from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
             }`}
         >
           {/* Message content */}
