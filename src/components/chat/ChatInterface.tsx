@@ -328,7 +328,7 @@ export default function ChatInterface() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="p-4 fixed w-full bottom-0 pb-2 sm:p-4 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
+              <div className="p-4 fixed inset-x-0 bottom-0 z-20 pb-2 sm:p-4 sm:pb-2 border-t border-slate-700 dark flex-shrink-0">
                 <div className="flex gap-1 max-w-4xl mx-auto">
                   <div className="flex-1 relative">
                     <Input
