@@ -70,7 +70,7 @@ const initialState: ChatState = {
   isLoading: false,
   chats: [],
   isLoadingChats: false,
-  selectedModel: "gemini-2-flash",
+  selectedModel: "gemini-2.0-flash",
   searchEnabled: false,
   error: null,
   userApiKeys: {},
