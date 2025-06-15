@@ -128,7 +128,7 @@ export function MessageBubble({
         >
           {/* Message content */}
           <div
-            className="whitespace-pre-wrap leading-relaxed prose prose-invert max-w-none"
+            className="break-words whitespace-pre-wrap leading-relaxed prose prose-invert max-w-none"
             dangerouslySetInnerHTML={{
               __html: renderContent(message.content),
             }}

@@ -148,7 +148,7 @@ export default function ChatSidebar({
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-67 bg-slate-900 border-r border-slate-700 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:relative md:translate-x-0 md:flex md:flex-col h-screen overflow-hidden rounded-r-lg`}
       >
@@ -160,16 +160,6 @@ export default function ChatSidebar({
                 Chat History
               </CardTitle>
               <div className="flex items-center gap-2">
-                {/* <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                        setShowSettings(!showSettings)
-                                    }
-                                    className="text-slate-400 hover:text-slate-100 hover:dark"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                </Button> */}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -232,7 +222,7 @@ export default function ChatSidebar({
             ${state.currentChatId === chat.id ? "dark border border-blue-500/30" : "hover:dark/50"}
         `}
                             >
-                              <div className="w-[70%] min-w-0 pr-2">
+                              <div className="w-[70%] min-w-0 pr-1">
                                 <p className="text-sm font-medium text-slate-200 truncate">
                                   {(chat.title || "Untitled Chat").length > 25
                                     ? `${(chat.title || "Untitled Chat").substring(0, 25)}...`
