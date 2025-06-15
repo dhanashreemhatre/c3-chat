@@ -40,10 +40,11 @@ export interface ChatState {
 
 export type ChatAction =
   | { type: "SET_CURRENT_CHAT"; payload: string | null }
-  | { type: "SET_CURRENT_CHAT_ID"; payload: string } // Add this new action
+  | { type: "SET_CURRENT_CHAT_ID"; payload: string }
   | { type: "SET_MESSAGES"; payload: Message[] }
   | { type: "ADD_MESSAGE"; payload: Message }
   | { type: "SET_LOADING"; payload: boolean }
+  | { type: "SET_IS_LOADING"; payload: boolean } // Add this line
   | { type: "SET_CHATS"; payload: Chat[] }
   | { type: "SET_LOADING_CHATS"; payload: boolean }
   | { type: "ADD_CHAT"; payload: Chat }
@@ -52,17 +53,19 @@ export type ChatAction =
   | { type: "SET_SEARCH_ENABLED"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
   | {
-      type: "SET_USER_API_KEY";
-      payload: { provider: string; apiKey: string };
-    }
+    type: "SET_USER_API_KEY";
+    payload: { provider: string; apiKey: string };
+  }
   | { type: "DELETE_ALL_CHATS" }
   | { type: "CLEAR_MESSAGES" }
   | { type: "RESET_STATE" }
   | {
-      type: "SET_AVAILABLE_MODELS";
-      payload: (ChatModel & { keySource: "user" | "server" })[];
-    }
-  | { type: "SET_LOADING_MODELS"; payload: boolean };
+    type: "SET_AVAILABLE_MODELS";
+    payload: (ChatModel & { keySource: "user" | "server" })[];
+  }
+  | { type: "SET_LOADING_MODELS"; payload: boolean }
+  | { type: "UPDATE_MESSAGE"; payload: Partial<Message> & { id: string } }
+  | { type: "REMOVE_MESSAGE"; payload: string };
 
 const initialState: ChatState = {
   currentChatId: null,
@@ -121,6 +124,12 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
 
     case "SET_LOADING":
+      return {
+        ...state,
+        isLoading: action.payload,
+      };
+
+    case "SET_IS_LOADING":
       return {
         ...state,
         isLoading: action.payload,
@@ -201,6 +210,22 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         isLoadingModels: action.payload,
       };
 
+    case "UPDATE_MESSAGE":
+      return {
+        ...state,
+        messages: state.messages.map(msg =>
+          msg.id === action.payload.id
+            ? { ...msg, ...action.payload }
+            : msg
+        ),
+      };
+
+    case "REMOVE_MESSAGE":
+      return {
+        ...state,
+        messages: state.messages.filter(msg => msg.id !== action.payload),
+      };
+
     default:
       return state;
   }
@@ -245,6 +270,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     content: string,
     title?: string,
   ): Promise<void> => {
+    console.log("=== SEND MESSAGE START ===");
+    console.log("Content:", content);
+    console.log("Current state:", {
+      currentChatId: state.currentChatId,
+      messagesLength: state.messages.length,
+      selectedModel: state.selectedModel,
+      isLoading: state.isLoading
+    });
+
     // 1. Add user message immediately
     const userMessage: Message = {
       id: generateId(),
@@ -253,60 +287,181 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       timestamp: new Date(),
     };
 
+    console.log("Adding user message:", userMessage);
     dispatch({ type: "ADD_MESSAGE", payload: userMessage });
     dispatch({ type: "SET_LOADING", payload: true });
     dispatch({ type: "SET_ERROR", payload: null });
 
+    // 2. Create assistant message placeholder for streaming
+    const assistantMessageId = generateId();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      content: "",
+      role: "assistant",
+      timestamp: new Date(),
+      isStreaming: true,
+    };
+
+    console.log("Adding assistant placeholder:", assistantMessage);
+    dispatch({ type: "ADD_MESSAGE", payload: assistantMessage });
+
     try {
       const chatId = state.currentChatId;
-
-      // 3. Make API call - Build messages array correctly
       const cleanedModelId = state.selectedModel.replace("models/", "");
-      const params = modelService.getModelRequestParams(state.selectedModel);
-
-      // Build the messages array for the API call
+      const params = await modelService.getModelRequestParams(state.selectedModel);
       const messagesForApi = [...state.messages, userMessage];
-      console.log("Messages being sent to API:", messagesForApi);
 
-      const response = await chatService.sendMessage({
-        messages: messagesForApi,
-        modelId: cleanedModelId,
-        provider: (await params).normalizedProvider,
-        chatId: chatId || undefined,
-        title: title || undefined,
-        search: state.searchEnabled,
+      console.log("API request params:", {
+        chatId,
+        cleanedModelId,
+        provider: params.normalizedProvider,
+        messagesCount: messagesForApi.length
       });
 
-      console.log("API response:", response);
+      // 3. Make the API call
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messagesForApi,
+          model: cleanedModelId,
+          provider: params.normalizedProvider,
+          chatId: chatId || undefined,
+          title: title || undefined,
+          search: state.searchEnabled,
+          stream: true, // Enable streaming
+        }),
+      });
 
-      // 4. Add AI response
-      const assistantMessage: Message = {
-        id: generateId(),
-        content: response.reply,
-        role: "assistant",
-        timestamp: new Date(),
-      };
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
 
-      console.log("Adding assistant message:", assistantMessage);
-      dispatch({ type: "ADD_MESSAGE", payload: assistantMessage });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API Error:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
 
-      // 5. Update current chat ID if it was a new chat (without clearing messages)
-      if (!chatId && response.chatId) {
-        console.log("Setting new chat ID:", response.chatId);
+      const contentType = response.headers.get("content-type");
+      console.log("Content type:", contentType);
+
+      // Check if response is streaming (plain text) or JSON
+      if (contentType?.includes("text/plain")) {
+        console.log("Handling streaming response");
+        await handleStreamingResponse(response, assistantMessageId);
+      } else {
+        console.log("Handling JSON response");
+        const data = await response.json();
+        console.log("JSON response data:", data);
+
+        // Update the assistant message with the complete response
         dispatch({
-          type: "SET_CURRENT_CHAT_ID",
-          payload: response.chatId,
+          type: "UPDATE_MESSAGE",
+          payload: {
+            id: assistantMessageId,
+            content: data.reply,
+            isStreaming: false,
+          },
         });
-        // Reload chats to include the new one
-        loadUserChats();
+
+        // Update current chat ID if it was a new chat
+        if (!chatId && data.chatId) {
+          console.log("Setting new chat ID:", data.chatId);
+          dispatch({
+            type: "SET_CURRENT_CHAT_ID",
+            payload: data.chatId,
+          });
+          loadUserChats();
+        }
       }
     } catch (error) {
       console.error("Error in sendMessage:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to send message";
       dispatch({ type: "SET_ERROR", payload: errorMessage });
+
+      // Remove the failed assistant message
+      dispatch({ type: "REMOVE_MESSAGE", payload: assistantMessageId });
     } finally {
+      console.log("=== SEND MESSAGE END ===");
       dispatch({ type: "SET_LOADING", payload: false });
+    }
+  };
+
+  // Helper function to handle streaming response
+  const handleStreamingResponse = async (response: Response, assistantMessageId: string) => {
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        console.log("Raw chunk received:", chunk); // Debug log
+
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine.startsWith('data: ')) {
+            const jsonStr = trimmedLine.slice(6);
+            console.log("JSON string to parse:", jsonStr); // Debug log
+
+            // Skip empty data lines
+            if (!jsonStr) continue;
+
+            try {
+              const data = JSON.parse(jsonStr);
+              console.log("Parsed data:", data); // Debug log
+
+              if (data.type === 'metadata') {
+                if (data.chatId && !state.currentChatId) {
+                  dispatch({ type: "SET_CURRENT_CHAT_ID", payload: data.chatId });
+                }
+              } else if (data.type === 'content') {
+                fullContent = data.fullContent;
+                dispatch({
+                  type: "UPDATE_MESSAGE",
+                  payload: {
+                    id: assistantMessageId,
+                    content: fullContent,
+                    isStreaming: true,
+                  },
+                });
+              } else if (data.type === 'done') {
+                dispatch({
+                  type: "UPDATE_MESSAGE",
+                  payload: {
+                    id: assistantMessageId,
+                    content: data.fullContent,
+                    isStreaming: false,
+                  },
+                });
+
+                // Reload chats if this was a new chat
+                if (!state.currentChatId) {
+                  loadUserChats();
+                }
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (parseError) {
+              console.error('Error parsing streaming data:', parseError);
+              console.error('Problematic JSON string:', jsonStr);
+              // Continue processing other lines instead of failing completely
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
     }
   };
 
