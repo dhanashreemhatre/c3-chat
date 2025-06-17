@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Markdown from "react-markdown";
 import {
   Bot,
   User,
@@ -14,8 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
 import { formatTime } from "../utils/chat";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { MarkdownParser } from "./CustomMarkdown";
 
 interface MessageBubbleProps {
   message: Message;
@@ -31,6 +29,7 @@ export function MessageBubble({
   // onShare,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // New state for expansion
   // const [showActions, setShowActions] = useState(false);
   const isUser = message.role === "user";
 
@@ -49,6 +48,12 @@ export function MessageBubble({
     onReaction?.(message.id, reaction);
   };
 
+  const MAX_LENGTH = 100;
+  const isTruncated = isUser && message.content.length > MAX_LENGTH && !isExpanded;
+  const displayContent = isTruncated
+    ? `${message.content.substring(0, MAX_LENGTH)}...`
+    : message.content;
+
   return (
     <div
       className={`group flex gap-2 sm:gap-3 mb-4 sm:mb-6 animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}
@@ -61,20 +66,23 @@ export function MessageBubble({
 
       <div
         className={`${
-          isUser 
-            ? 'max-w-[50%] sm:max-w-[55%] md:max-w-[60%] lg:max-w-[65%] xl:max-w-[70%]' 
+          isUser
+            ? 'max-w-[50%] sm:max-w-[55%] md:max-w-[60%] lg:max-w-[65%] xl:max-w-[70%]'
             : 'max-w-[75%] sm:max-w-[80%] md:max-w-[85%] lg:max-w-[90%] xl:max-w-[95%]'
         } ${isUser ? "order-first" : ""} min-w-0`}
       >
         <div
-          className={`rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${ 
+          className={`rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-lg transition-all duration-200 hover:shadow-xl ${
             isUser
               ? "bg-foreground hover:bg-muted-foreground text-black ml-auto transform hover:scale-[1.02]"
               : "bg-secondary from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-white/5 text-slate-100 hover:border-white/10"
             }`}
         >
           {/* Message content */}
-          <div className="text-sm sm:text-base break-words whitespace-pre-wrap leading-relaxed prose prose-invert max-w-none overflow-wrap-anywhere prose-sm sm:prose-base">
+          <div className="text-sm sm:text-base break-words whitespace-pre-wrap leading-relaxed
+                       prose prose-invert prose-sm sm:prose-base
+                       prose-p:mt-0 prose-p:mb-1 max-w-none overflow-wrap-anywhere"
+           >
             {/* Show loading spinner if assistant message is streaming and content is empty */}
             {!isUser && (message as any).isStreaming && !message.content && (
               <div className="flex items-center justify-center py-2">
@@ -84,47 +92,61 @@ export function MessageBubble({
             )}
             {/* Otherwise show the message content */}
             {(!((message as any).isStreaming && !message.content)) && (
-              <Markdown
-                components={{
-                  code({ className, children, ...rest }) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    return match ? (
-                      <div className="max-w-60 overflow-x-auto">
-                      <SyntaxHighlighter
-                        PreTag="div"
-                        language={match[1]}
-                        style={vscDarkPlus as any}
-                        {...rest}
-                        ref={null}
-                        className="text-xs sm:text-sm !bg-transparent"
-                      >
-                        {String(children)}
-                      </SyntaxHighlighter>
-                      </div>
-                    ) : (
-                      <code {...rest} className={`${className} text-xs sm:text-sm`}>
-                        {children}
-                      </code>
-                    );
-                  },
-                  p: ({ children }) => (
-                    <p className="text-sm sm:text-base leading-relaxed">{children}</p>
-                  ),
-                  h1: ({ children }) => (
-                    <h1 className="text-lg sm:text-xl font-bold">{children}</h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-base sm:text-lg font-bold">{children}</h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-sm sm:text-base font-bold">{children}</h3>
-                  ),
-                }}
-              >
-                {message.content}
-              </Markdown>
+              // <Markdown
+              //   components={{
+              //     code({ className, children, ...rest }) {
+              //       const match = /language-(\w+)/.exec(className || "");
+              //       return match ? (
+              //         <div className="max-w-60 sm:max-w-120 overflow-x-auto">
+              //         <SyntaxHighlighter
+              //           PreTag="div"
+              //           language={match[1]}
+              //           style={vscDarkPlus as any}
+              //           wrapLines={true}
+              //           {...rest}
+              //           ref={null}
+              //           className="text-xs sm:text-sm !bg-transparent"
+              //         >
+              //           {String(children).replace(/\n$/, '')}
+              //         </SyntaxHighlighter>
+              //         </div>
+              //       ) : (
+              //         <code {...rest} className={`${className} text-xs sm:text-sm`}>
+              //           {children}
+              //         </code>
+              //       );
+              //     },
+              //     p: ({ children }) => (
+              //       <p className="text-sm sm:text-base leading-tight mt-0 mb-1">
+              //         {children}
+              //       </p>
+              //     ),
+              //     h1: ({ children }) => (
+              //       <h1 className="text-lg sm:text-xl font-bold mt-0 mb-1">{children}</h1>
+              //     ),
+              //     h2: ({ children }) => (
+              //       <h2 className="text-base sm:text-lg font-bold mt-0 mb-1">{children}</h2>
+              //     ),
+              //     h3: ({ children }) => (
+              //       <h3 className="text-sm sm:text-base font-bold mt-0 mb-1">{children}</h3>
+              //     ),
+              //   }}
+              // >
+              //   {displayContent}
+              // </Markdown>
+              <MarkdownParser
+                content={displayContent}/>
             )}
           </div>
+          {isTruncated && (
+            <Button
+              variant="link"
+              className="text-blue-400 font-bold hover:text-blue-300 p-0 h-auto text-xs sm:text-sm mt-1"
+              onClick={() => setIsExpanded(true)}
+            >
+              Read more
+            </Button>
+          )}
 
           {/* Action buttons */}
           <div
