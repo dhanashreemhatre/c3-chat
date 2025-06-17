@@ -101,13 +101,6 @@ export default function ModelSelector() {
           </SelectContent>
         </Select>
       </div>
-
-      {/* <button
-                className="mt-2 text-xs text-blue-600 hover:text-blue-800"
-                onClick={() => loadAvailableModels()}
-            >
-                Refresh models
-            </button> */}
     </div>
   );
 }
