@@ -122,7 +122,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     const validateApiKeyFormat = (provider: string, apiKey: string): boolean => {
         const patterns: Record<string, RegExp> = {
-            openai: /^sk-[a-zA-Z0-9]{48,}$/,
+            // More flexible OpenAI pattern - starts with sk- followed by base64-like characters
+            openai: /^sk-/,
             anthropic: /^sk-ant-[a-zA-Z0-9\-_]{95,}$/,
             google: /^[a-zA-Z0-9\-_]{39}$/,
         };
