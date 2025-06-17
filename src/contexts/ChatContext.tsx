@@ -73,7 +73,7 @@ const initialState: ChatState = {
   isLoading: false,
   chats: [],
   isLoadingChats: false,
-  selectedModel: "gemini-2.0-flash",
+  selectedModel: "models/gemini-2.0-flash",
   searchEnabled: false,
   error: null,
   userApiKeys: {},
@@ -82,12 +82,7 @@ const initialState: ChatState = {
 };
 
 function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  console.log(
-    "Reducer called with action:",
-    action.type,
-    "payload" in action ? action.payload : "no payload",
-  );
-  console.log("Current state.messages.length:", state.messages.length);
+  console.log("ChatReducer action:", action.type); // Log all actions
 
   switch (action.type) {
     case "SET_CURRENT_CHAT":
@@ -115,9 +110,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
 
     case "ADD_MESSAGE":
-      console.log("ADD_MESSAGE - adding message:", action.payload);
       const newMessages = [...state.messages, action.payload];
-      console.log("New messages array length:", newMessages.length);
       return {
         ...state,
         messages: newMessages,
@@ -198,12 +191,28 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case "RESET_STATE":
       return initialState;
 
-    case "SET_AVAILABLE_MODELS":
+    case "SET_AVAILABLE_MODELS": {
+      const newModels = action.payload;
+      console.log("[Reducer SET_AVAILABLE_MODELS] Incoming models:", newModels);
+      console.log("[Reducer SET_AVAILABLE_MODELS] Current state.selectedModel:", state.selectedModel);
+
+      let newSelectedModel = state.selectedModel;
+      
+      console.log("[Reducer SET_AVAILABLE_MODELS] Final newSelectedModel:", newSelectedModel);
+
       return {
         ...state,
-        availableModels: action.payload,
+        availableModels: newModels,
+        selectedModel: newSelectedModel,
       };
-
+    }
+    case "SET_SELECTED_MODEL": { // Also log when this is explicitly called
+        console.log("[Reducer SET_SELECTED_MODEL] Payload:", action.payload);
+        return {
+            ...state,
+            selectedModel: action.payload,
+        };
+    }
     case "SET_LOADING_MODELS":
       return {
         ...state,
