@@ -144,7 +144,7 @@ export default function HomePage() {
             {/* Hero Section */}
             <section className="relative py-20 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-6xl mx-auto text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-8 backdrop-blur-sm border border-white/10">
+                    <div className="w-20 h-20 rounded-2xl bg-black flex items-center justify-center mx-auto mb-8 backdrop-blur-sm border border-white/10">
                         <Sparkles className="w-10 h-10 text-blue-400" />
                     </div>
 
@@ -191,7 +191,7 @@ export default function HomePage() {
                         {supportedModels.map((model, index) => (
                             <div
                                 key={index}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700"
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-background border border-border"
                             >
                                 <div
                                     className={`w-3 h-3 rounded-full bg-gradient-to-r ${model.color}`}
@@ -211,7 +211,7 @@ export default function HomePage() {
             {/* Features Section */}
             <section
                 id="features"
-                className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/20"
+                className="py-20 px-4 sm:px-6 lg:px-8 bg-black"
             >
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
@@ -228,7 +228,7 @@ export default function HomePage() {
                         {features.map((feature, index) => (
                             <Card
                                 key={index}
-                                className="bg-slate-800/30 border-slate-700 backdrop-blur-sm hover:bg-slate-800/50 transition-all duration-200"
+                                className="bg-background border-border backdrop-blur-sm hover:bg-secondary transition-all duration-200"
                             >
                                 <CardHeader>
                                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
@@ -280,7 +280,7 @@ export default function HomePage() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
                 <div className="max-w-4xl mx-auto text-center">
                     <h2 className="text-3xl sm:text-4xl font-bold mb-6">
                         Ready to Experience the Future?

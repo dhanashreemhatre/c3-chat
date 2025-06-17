@@ -22,7 +22,7 @@ interface ApiKeyEntry {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { state, dispatch, saveApiKey } = useChatContext();
+    const { state, dispatch, deleteAllChats, loadUserChats, saveApiKey } = useChatContext();
     const [activeTab, setActiveTab] = useState("general");
     const [showApiKeyForm, setShowApiKeyForm] = useState(false);
     const [apiKeyProvider, setApiKeyProvider] = useState("");
@@ -141,9 +141,17 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
     };
 
-    const handleDeleteAllChats = () => {
-        if (window.confirm("Are you sure you want to delete all chats? This action cannot be undone.")) {
-            dispatch({ type: "DELETE_ALL_CHATS" });
+    const handleDeleteAllChats = async () => {
+        if (!window.confirm("Are you sure you want to delete all chats? This action cannot be undone.")) {
+            return;
+        }
+        try {
+            await deleteAllChats(); // This clears chats in context
+            await loadUserChats();  // This refetches from server (should be empty after deletion)
+            setSuccess("All chats deleted successfully!");
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : "Failed to delete chats");
         }
     };
 
