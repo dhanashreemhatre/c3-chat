@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MarkdownParserProps {
@@ -251,8 +251,8 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
     const elements: React.ReactNode[] = [];
     let currentIndex = 0;
 
-    // Pattern for inline code, bold, italic, and links
-    const inlineRegex = /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*]+\*)|(_[^_]+_)|(\[([^\]]+)\]\(([^)]+)\))/g;
+    // Enhanced pattern to catch more link formats and ensure proper parsing
+    const inlineRegex = /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*]+\*)|(_[^_]+_)|(\[([^\]]+)\]\(([^)]+)\))|(https?:\/\/[^\s]+)/g;
     
     let match;
     while ((match = inlineRegex.exec(text)) !== null) {
@@ -289,8 +289,8 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
           </em>
         );
       }
-      // Links [text](url)
-      else if (match[6]) {
+      // Markdown links [text](url)
+      else if (match[6] && match[7] && match[8]) {
         const linkText = match[7];
         const linkUrl = match[8];
         elements.push(
@@ -299,9 +299,34 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline"
+            className="text-blue-400 hover:text-blue-300 underline decoration-blue-400 hover:decoration-blue-300 transition-colors duration-200 inline-flex items-center gap-1 cursor-pointer"
+            onClick={(e) => {
+              // Ensure the link is clickable by preventing any parent event handlers
+              e.stopPropagation();
+            }}
           >
             {linkText}
+            <ExternalLink className="w-3 h-3 inline-block" />
+          </a>
+        );
+      }
+      // Plain URLs (auto-link)
+      else if (match[9]) {
+        const url = fullMatch;
+        elements.push(
+          <a
+            key={`autolink-${match.index}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline decoration-blue-400 hover:decoration-blue-300 transition-colors duration-200 inline-flex items-center gap-1 cursor-pointer break-all"
+            onClick={(e) => {
+              // Ensure the link is clickable by preventing any parent event handlers
+              e.stopPropagation();
+            }}
+          >
+            {url}
+            <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
           </a>
         );
       }
