@@ -13,6 +13,7 @@ import {
   Search,
   PanelLeftOpen,
   PanelRightOpen,
+  RefreshCw,
 } from "lucide-react";
 import { useChatContext } from "../contexts/ChatContext";
 import { Chat } from "../services/chatService";
@@ -33,6 +34,8 @@ export default function ChatSidebar({
     shareChat,
     switchToChat,
     saveApiKey,
+    refreshChats, // Add this
+    clearChatCache, // Add this
   } = useChatContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [, setShowApiKeyForm] = useState(false);
@@ -137,6 +140,25 @@ export default function ChatSidebar({
   };
 
   const chatGroups = groupChatsByDate(filteredChats);
+
+  const handleRefreshChats = async () => {
+    try {
+      await refreshChats();
+    } catch (error) {
+      console.error("Failed to refresh chats:", error);
+    }
+  };
+
+  const handleClearCache = () => {
+    if (
+      confirm(
+        "Clear chat cache? This will reload all chats from the server.",
+      )
+    ) {
+      clearChatCache();
+      window.location.reload(); // Refresh the page to reload everything
+    }
+  };
 
   return (
     <>
