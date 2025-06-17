@@ -30,13 +30,74 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [isLoadingApiKeys, setIsLoadingApiKeys] = useState(false);
+    const [isDeletingApiKey, setIsDeletingApiKey] = useState<string | null>(null);
 
     // Get unique providers from chat models
     const availableProviders = Array.from(
         new Set(CHAT_MODELS.map((model) => model.provider.toLowerCase())),
     );
 
-    const loadApiKeys = useCallback(() => {
+    const fetchApiKeysFromServer = useCallback(async () => {
+        setIsLoadingApiKeys(true);
+        try {
+            const response = await fetch('/api/user-api-key');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch API keys: ${response.statusText}`);
+            }
+            const data = await response.json();
+            
+            // Transform server response to match our ApiKeyEntry format
+            // Server returns: { success: true, apiKeys: [{ provider: "google", apiKey: "***..." }] }
+            const serverApiKeys: ApiKeyEntry[] = (data.apiKeys || []).map((item: any) => ({
+                provider: item.provider,
+                apiKey: item.apiKey,
+                isVisible: false,
+                status: "active" as const,
+            }));
+            
+            setApiKeys(serverApiKeys);
+        } catch (error) {
+            console.error('Failed to fetch API keys from server:', error);
+            setError(error instanceof Error ? error.message : "Failed to fetch API keys from server");
+            // Fallback to local state if server fetch fails
+            loadApiKeysFromLocal();
+        } finally {
+            setIsLoadingApiKeys(false);
+        }
+    }, []);
+
+    const deleteApiKeyFromServer = useCallback(async (provider: string) => {
+        setIsDeletingApiKey(provider);
+        try {
+            const response = await fetch('/api/user-api-key', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ provider }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete API key: ${response.statusText}`);
+            }
+
+            // Remove from local state immediately for better UX
+            setApiKeys((prev) => prev.filter((key) => key.provider !== provider));
+            setSuccess(`API key for ${provider} deleted successfully!`);
+            setTimeout(() => setSuccess(null), 3000);
+
+            // Refresh from server to ensure consistency
+            await fetchApiKeysFromServer();
+        } catch (error) {
+            console.error('Failed to delete API key from server:', error);
+            setError(error instanceof Error ? error.message : "Failed to delete API key from server");
+        } finally {
+            setIsDeletingApiKey(null);
+        }
+    }, [fetchApiKeysFromServer]);
+
+    const loadApiKeysFromLocal = useCallback(() => {
         const entries: ApiKeyEntry[] = Object.entries(state.userApiKeys).map(
             ([provider, apiKey]) => ({
                 provider,
@@ -47,6 +108,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         );
         setApiKeys(entries);
     }, [state.userApiKeys]);
+
+    const loadApiKeys = useCallback(() => {
+        // Try to fetch from server first, fallback to local if it fails
+        fetchApiKeysFromServer();
+    }, [fetchApiKeysFromServer]);
 
     useEffect(() => {
         if (isOpen) {
@@ -63,21 +129,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         const pattern = patterns[provider.toLowerCase()];
         return pattern ? pattern.test(apiKey) : apiKey.length > 10;
-    };
-
-    const maskApiKey = (apiKey: string): string => {
-        if (apiKey.length <= 8) return "••••••••";
-        return (
-            apiKey.substring(0, 4) + "••••••••" + apiKey.substring(apiKey.length - 4)
-        );
-    };
-
-    const toggleVisibility = (provider: string) => {
-        setApiKeys((prev) =>
-            prev.map((key) =>
-                key.provider === provider ? { ...key, isVisible: !key.isVisible } : key,
-            ),
-        );
     };
 
     const handleSaveApiKey = async (e: React.FormEvent) => {
@@ -115,6 +166,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             setSuccess(`API key for ${apiKeyProvider} saved successfully!`);
 
             setTimeout(() => setSuccess(null), 3000);
+            
+            // Refresh API keys from server after saving
+            await fetchApiKeysFromServer();
         } catch (error) {
             setError(
                 error instanceof Error ? error.message : "Failed to save API key",
@@ -130,14 +184,25 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
 
         try {
+            setError(null);
+            
+            // Try to delete from server first
+            await deleteApiKeyFromServer(provider);
+            
+            // Also remove from local context as fallback
             await saveApiKey(provider, "");
-            setApiKeys((prev) => prev.filter((key) => key.provider !== provider));
-            setSuccess(`API key for ${provider} removed successfully!`);
-            setTimeout(() => setSuccess(null), 3000);
         } catch (error) {
-            setError(
-                error instanceof Error ? error.message : "Failed to remove API key",
-            );
+            // If server deletion fails, try local deletion as fallback
+            try {
+                await saveApiKey(provider, "");
+                setApiKeys((prev) => prev.filter((key) => key.provider !== provider));
+                setSuccess(`API key for ${provider} removed successfully!`);
+                setTimeout(() => setSuccess(null), 3000);
+            } catch (localError) {
+                setError(
+                    error instanceof Error ? error.message : "Failed to remove API key",
+                );
+            }
         }
     };
 
@@ -290,7 +355,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                         payload: e.target.checked,
                                                     })
                                                 }
-                                                className="w-4 h-4 text-blue-600 dark border-slate-500 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-blue-600 dark:border-slate-500 rounded focus:ring-blue-500"
                                             />
                                             <label htmlFor="web-search" className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
                                                 <Globe className="w-4 h-4" />
@@ -307,17 +372,36 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                             {/* API Keys */}
                             <TabsContent value="api-keys" className="mt-0">
                                 <div className="space-y-6">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-slate-100 mb-2">
-                                            API Key Management
-                                        </h3>
-                                        <p className="text-sm text-slate-400 mb-4">
-                                            Manage your API keys for different AI providers. Add your own API keys to unlock unlimited usage.
-                                        </p>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-slate-100 mb-2">
+                                                API Key Management
+                                            </h3>
+                                            <p className="text-sm text-slate-400 mb-4">
+                                                Manage your API keys for different AI providers. Add your own API keys to unlock unlimited usage.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={fetchApiKeysFromServer}
+                                            disabled={isLoadingApiKeys}
+                                            className="text-slate-200 border-slate-600 hover:dark"
+                                        >
+                                            {isLoadingApiKeys ? "Refreshing..." : "Refresh"}
+                                        </Button>
                                     </div>
 
+                                    {/* Loading State */}
+                                    {isLoadingApiKeys && (
+                                        <div className="flex items-center justify-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                            <span className="ml-2 text-slate-400">Loading API keys...</span>
+                                        </div>
+                                    )}
+
                                     {/* Existing API Keys */}
-                                    {apiKeys.length > 0 && (
+                                    {!isLoadingApiKeys && apiKeys.length > 0 && (
                                         <div className="space-y-3 mb-6">
                                             <h4 className="text-sm font-medium text-slate-200">Your API Keys</h4>
                                             {apiKeys.map((keyEntry) => (
@@ -325,10 +409,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                     <div className="flex items-center justify-between">
                                                         <div>
                                                             <p className="text-sm font-medium text-slate-200 capitalize">
-                                                                {keyEntry.provider}
+                                                                {String(keyEntry.provider)}
                                                             </p>
                                                             <p className="text-xs text-slate-400 font-mono">
-                                                                {keyEntry.isVisible ? keyEntry.apiKey : maskApiKey(keyEntry.apiKey)}
+                                                                {String(keyEntry.apiKey)}
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -339,18 +423,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => toggleVisibility(keyEntry.provider)}
-                                                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-100"
+                                                                onClick={() => handleRemoveApiKey(String(keyEntry.provider))}
+                                                                disabled={isDeletingApiKey === keyEntry.provider}
+                                                                className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 disabled:opacity-50"
                                                             >
-                                                                {keyEntry.isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleRemoveApiKey(keyEntry.provider)}
-                                                                className="h-8 w-8 p-0 text-slate-400 hover:text-red-400"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
+                                                                {isDeletingApiKey === keyEntry.provider ? (
+                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                                                                ) : (
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                )}
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -359,75 +440,77 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         </div>
                                     )}
 
-                                    <div className="space-y-4">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setShowApiKeyForm(!showApiKeyForm)}
-                                            className="w-full text-slate-200 border-slate-600 hover:dark"
-                                        >
-                                            <Key className="w-4 h-4 mr-2" />
-                                            {showApiKeyForm ? "Cancel" : "Add API Key"}
-                                        </Button>
-
-                                        {showApiKeyForm && (
-                                            <form
-                                                onSubmit={handleSaveApiKey}
-                                                className="space-y-4 p-4 dark rounded-lg border border-slate-600"
+                                    {!isLoadingApiKeys && (
+                                        <div className="space-y-4">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setShowApiKeyForm(!showApiKeyForm)}
+                                                className="w-full text-slate-200 border-slate-600 hover:dark"
                                             >
-                                                <div>
-                                                    <label className="text-sm font-medium text-slate-200 mb-2 block">
-                                                        Provider
-                                                    </label>
-                                                    <select
-                                                        value={apiKeyProvider}
-                                                        onChange={(e) => setApiKeyProvider(e.target.value)}
-                                                        className="w-full p-3 rounded-lg dark border border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                                        required
-                                                    >
-                                                        <option value="">Select Provider</option>
-                                                        {availableProviders.map((provider) => (
-                                                            <option key={provider} value={provider}>
-                                                                {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
+                                                <Key className="w-4 h-4 mr-2" />
+                                                {showApiKeyForm ? "Cancel" : "Add API Key"}
+                                            </Button>
 
-                                                <div>
-                                                    <label className="text-sm font-medium text-slate-200 mb-2 block">
-                                                        API Key
-                                                    </label>
-                                                    <Input
-                                                        type="password"
-                                                        placeholder="Enter your API key..."
-                                                        value={apiKeyValue}
-                                                        onChange={(e) => setApiKeyValue(e.target.value)}
-                                                        className="dark border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                                        required
-                                                    />
-                                                </div>
+                                            {showApiKeyForm && (
+                                                <form
+                                                    onSubmit={handleSaveApiKey}
+                                                    className="space-y-4 p-4 dark rounded-lg border border-slate-600"
+                                                >
+                                                    <div>
+                                                        <label className="text-sm font-medium text-slate-200 mb-2 block">
+                                                            Provider
+                                                        </label>
+                                                        <select
+                                                            value={apiKeyProvider}
+                                                            onChange={(e) => setApiKeyProvider(e.target.value)}
+                                                            className="w-full p-3 rounded-lg dark border border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        >
+                                                            <option value="">Select Provider</option>
+                                                            {availableProviders.map((provider) => (
+                                                                <option key={provider} value={provider}>
+                                                                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
 
-                                                <div className="flex gap-2">
-                                                    <Button type="submit" className="flex-1">
-                                                        Save API Key
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            setShowApiKeyForm(false);
-                                                            setApiKeyProvider("");
-                                                            setApiKeyValue("");
-                                                            setError(null);
-                                                        }}
-                                                        className="text-slate-200 border-slate-600 hover:dark"
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        )}
-                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-slate-200 mb-2 block">
+                                                            API Key
+                                                        </label>
+                                                        <Input
+                                                            type="password"
+                                                            placeholder="Enter your API key..."
+                                                            value={apiKeyValue}
+                                                            onChange={(e) => setApiKeyValue(e.target.value)}
+                                                            className="dark border-slate-500 text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex gap-2">
+                                                        <Button type="submit" className="flex-1">
+                                                            Save API Key
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                setShowApiKeyForm(false);
+                                                                setApiKeyProvider("");
+                                                                setApiKeyValue("");
+                                                                setError(null);
+                                                            }}
+                                                            className="text-slate-200 border-slate-600 hover:dark"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </TabsContent>
 

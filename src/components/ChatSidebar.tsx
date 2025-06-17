@@ -13,7 +13,6 @@ import {
   Search,
   PanelLeftOpen,
   PanelRightOpen,
-  RefreshCw,
 } from "lucide-react";
 import { useChatContext } from "../contexts/ChatContext";
 import { Chat } from "../services/chatService";
