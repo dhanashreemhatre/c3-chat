@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -39,7 +39,7 @@ export default function ChatInterface() {
   const [shareToken, setShareToken] = useState<string | null>(null);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -329,11 +329,6 @@ export default function ChatInterface() {
                         </div>
                       );
                     } else {
-                      // console.log(
-                      //   "Showing messages area with",
-                      //   state.messages.length,
-                      //   "messages",
-                      // );
                       return (
                         <div className="space-y-4 sm:space-y-6 w-full">
                           {state.messages.map((message, index) => (
@@ -367,7 +362,8 @@ export default function ChatInterface() {
                 <div className="p-4 sm:p-4 pb-2 sm:pb-2 border-t border-border dark flex-shrink-0 w-full">
                   <div className="flex gap-2 w-full">
                     <div className="flex-1 relative min-w-0">
-                      <Input
+                      <Textarea
+                        autoFocus
                         ref={inputRef}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
@@ -378,7 +374,7 @@ export default function ChatInterface() {
                             : "Type your message..."
                         }
                         disabled={state.isLoading}
-                        className="dark border-border text-slate-100 placeholder-slate-400 pr-12 h-10 sm:h-12 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all w-full"
+                        className="dark border-border text-slate-100 placeholder-slate-400 pr-12 h-8 sm:h-10 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all w-full"
                       />
                     </div>
 
