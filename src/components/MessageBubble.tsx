@@ -9,6 +9,7 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
@@ -74,45 +75,55 @@ export function MessageBubble({
         >
           {/* Message content */}
           <div className="text-sm sm:text-base break-words whitespace-pre-wrap leading-relaxed prose prose-invert max-w-none overflow-wrap-anywhere prose-sm sm:prose-base">
-            <Markdown
-              components={{
-                code({ className, children, ...rest }) {
-                  const match = /language-(\w+)/.exec(className || "");
-                  return match ? (
-                    <div className="max-w-60 overflow-x-auto">
-                    <SyntaxHighlighter
-                      PreTag="div"
-                      language={match[1]}
-                      style={vscDarkPlus as any}
-                      {...rest}
-                      ref={null}
-                      className="text-xs sm:text-sm !bg-transparent"
-                    >
-                      {String(children)}
-                    </SyntaxHighlighter>
-                    </div>
-                  ) : (
-                    <code {...rest} className={`${className} text-xs sm:text-sm`}>
-                      {children}
-                    </code>
-                  );
-                },
-                p: ({ children }) => (
-                  <p className="text-sm sm:text-base leading-relaxed">{children}</p>
-                ),
-                h1: ({ children }) => (
-                  <h1 className="text-lg sm:text-xl font-bold">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-base sm:text-lg font-bold">{children}</h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-sm sm:text-base font-bold">{children}</h3>
-                ),
-              }}
-            >
-              {message.content}
-            </Markdown>
+            {/* Show loading spinner if assistant message is streaming and content is empty */}
+            {!isUser && (message as any).isStreaming && !message.content && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="animate-spin w-5 h-5 text-blue-400" />
+                <span className="ml-2 text-xs text-slate-400">Thinking...</span>
+              </div>
+            )}
+            {/* Otherwise show the message content */}
+            {(!((message as any).isStreaming && !message.content)) && (
+              <Markdown
+                components={{
+                  code({ className, children, ...rest }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    return match ? (
+                      <div className="max-w-60 overflow-x-auto">
+                      <SyntaxHighlighter
+                        PreTag="div"
+                        language={match[1]}
+                        style={vscDarkPlus as any}
+                        {...rest}
+                        ref={null}
+                        className="text-xs sm:text-sm !bg-transparent"
+                      >
+                        {String(children)}
+                      </SyntaxHighlighter>
+                      </div>
+                    ) : (
+                      <code {...rest} className={`${className} text-xs sm:text-sm`}>
+                        {children}
+                      </code>
+                    );
+                  },
+                  p: ({ children }) => (
+                    <p className="text-sm sm:text-base leading-relaxed">{children}</p>
+                  ),
+                  h1: ({ children }) => (
+                    <h1 className="text-lg sm:text-xl font-bold">{children}</h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-base sm:text-lg font-bold">{children}</h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-sm sm:text-base font-bold">{children}</h3>
+                  ),
+                }}
+              >
+                {message.content}
+              </Markdown>
+            )}
           </div>
 
           {/* Action buttons */}
