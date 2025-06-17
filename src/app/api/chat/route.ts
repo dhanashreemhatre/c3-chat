@@ -111,43 +111,21 @@ export async function POST(req: Request) {
       ).join('\n\n');
 
     if (formattedResults) {
-      const searchContext = `You are an AI assistant tasked with answering the user's question using information from web search results.
+      const searchContext = `You are an AI assistant. Answer the user's question using only the web search results below.
 
-USER QUESTION: "${userMessage.content}"
+QUESTION: "${userMessage.content}"
 
-WEB SEARCH RESULTS:
+RESULTS:
 ${formattedResults}
 
-INSTRUCTIONS:
-1. ANSWER REQUIREMENTS:
-   - Provide a direct, comprehensive answer to the user's question
-   - Use ONLY information found in the provided web search results
-   - If the search results don't contain enough information to answer the question, clearly state this limitation
-   - Synthesize information from multiple sources when relevant
+GUIDELINES:
+- Give a clear, direct answer with supporting details from the results.
+- Use only the information provided. If insufficient, say so.
+- Explain any conflicting sources if found.
+- List all sources at the end under "Sources" using [Title](URL) format.
+- Do not cite inline or use outside knowledge.
 
-2. CITATION REQUIREMENTS:
-   - Always cite your sources using [ Source: URL or Title ] format
-   - Include citations immediately after each claim or piece of information
-   - If multiple sources support the same point, cite all relevant sources
-   - Never make claims without proper citations to the search results
-
-3. HANDLING CONFLICTING INFORMATION:
-   - If sources contradict each other, explicitly mention the contradiction
-   - Present different viewpoints with their respective sources
-   - Do not choose sides unless there's overwhelming evidence from more authoritative sources
-
-4. QUALITY GUIDELINES:
-   - Structure your answer logically with clear sections if the topic is complex
-   - Use specific details, numbers, dates, and examples from the sources
-   - Avoid generic statements - be specific and factual
-   - If information is outdated, mention the publication date
-
-5. LIMITATIONS:
-   - If the search results are insufficient or off-topic, say: "The provided search results do not contain enough relevant information to fully answer your question about [topic]."
-   - Don't speculate or add information not found in the search results
-   - If you need more recent information, suggest the user perform a new search
-
-Please provide your answer now, following all the above guidelines.`;
+Now write the answer.`;
 
       // Put system message FIRST, then other messages
       messagesForLLM = [
