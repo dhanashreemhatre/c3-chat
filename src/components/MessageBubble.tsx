@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Markdown from "react-markdown";
 import {
   Bot,
   User,
@@ -15,8 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
 import { formatTime } from "../utils/chat";
 import { MarkdownParser } from "./CustomMarkdown";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 
 interface MessageBubbleProps {
   message: Message;
