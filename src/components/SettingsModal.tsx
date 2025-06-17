@@ -97,6 +97,30 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
     }, [fetchApiKeysFromServer]);
 
+    
+
+    const saveApiKeyToServer = useCallback(async (provider: string, apiKey: string) => {
+        try {
+            const response = await fetch('/api/user-api-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ provider, apiKey }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to save API key: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Failed to save API key to server:', error);
+            throw error;
+        }
+    }, []);
+
     const loadApiKeysFromLocal = useCallback(() => {
         const entries: ApiKeyEntry[] = Object.entries(state.userApiKeys).map(
             ([provider, apiKey]) => ({
@@ -147,19 +171,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         try {
             setError(null);
+            
+            // Save to server first
+            await saveApiKeyToServer(apiKeyProvider, apiKeyValue.trim());
+            
+            // Also save to local context for immediate state update
             await saveApiKey(apiKeyProvider, apiKeyValue.trim());
-
-            const newEntry: ApiKeyEntry = {
-                provider: apiKeyProvider,
-                apiKey: apiKeyValue.trim(),
-                isVisible: false,
-                status: "active",
-            };
-
-            setApiKeys((prev) => {
-                const filtered = prev.filter((key) => key.provider !== apiKeyProvider);
-                return [...filtered, newEntry];
-            });
 
             setApiKeyValue("");
             setApiKeyProvider("");
