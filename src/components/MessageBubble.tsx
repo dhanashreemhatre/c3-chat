@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
 import { formatTime } from "../utils/chat";
-import { MarkdownParser } from "./CustomMarkdown";
+import { MarkdownParser } from "./markdown/CustomMarkdown";
 
 interface MessageBubbleProps {
   message: Message;

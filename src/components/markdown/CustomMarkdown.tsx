@@ -1,78 +1,8 @@
-import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
-interface MarkdownParserProps {
-  content: string;
-  className?: string;
-}
-
-interface CodeBlockProps {
-  code: string;
-  language: string;
-  index: number;
-}
-
-function CodeBlock({ code, language, index }: CodeBlockProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy code:', error);
-    }
-  };
-
-  return (
-    <div className="relative group max-w-60 sm:max-w-140 lg:max-w-160 xl:max-w-170 overflow-x-auto my-2">
-      {/* Language label and copy button */}
-      <div className="flex items-center justify-between bg-slate-800 px-3 py-2 text-xs text-slate-300 border-b border-slate-600">
-        <span className="font-mono">{language}</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-6 w-6 p-0 bg-back hover:bg-slate-600 text-slate-300 hover:text-white opacity-70 group-hover:opacity-100 transition-opacity"
-          title="Copy code"
-        >
-          {copied ? (
-            <Check className="w-3 h-3" />
-          ) : (
-            <Copy className="w-3 h-3" />
-          )}
-        </Button>
-      </div>
-      
-      {/* Code content */}
-      <SyntaxHighlighter
-        PreTag="div"
-        language={language}
-        style={vscDarkPlus as any}
-        wrapLines={true}
-        className="text-xs sm:text-sm !bg-transparent !mt-0 !rounded-t-none rounded-b-md"
-        customStyle={{
-          margin: 0,
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-        }}
-      >
-        {code}
-      </SyntaxHighlighter>
-      
-      {/* Copied feedback */}
-      {copied && (
-        <div className="absolute top-2 right-12 bg-green-600 text-white text-xs px-2 py-1 rounded animate-fade-in">
-          Copied!
-        </div>
-      )}
-    </div>
-  );
-}
+import { MarkdownParserProps} from '@/types/markdown';
+import { CodeBlock } from './CodeBlock';
 
 export function MarkdownParser({ content, className = '' }: MarkdownParserProps) {
   const parseMarkdown = (text: string): React.ReactNode[] => {
@@ -251,8 +181,8 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
     const elements: React.ReactNode[] = [];
     let currentIndex = 0;
 
-    // Pattern for inline code, bold, italic, and links
-    const inlineRegex = /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*]+\*)|(_[^_]+_)|(\[([^\]]+)\]\(([^)]+)\))/g;
+    // Enhanced pattern to catch more link formats and ensure proper parsing
+    const inlineRegex = /(`[^`]+`)|(\*\*[^*]+\*\*)|(__[^_]+__)|(\*[^*]+\*)|(_[^_]+_)|(\[([^\]]+)\]\(([^)]+)\))|(https?:\/\/[^\s]+)/g;
     
     let match;
     while ((match = inlineRegex.exec(text)) !== null) {
@@ -289,8 +219,8 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
           </em>
         );
       }
-      // Links [text](url)
-      else if (match[6]) {
+      // Markdown links [text](url)
+      else if (match[6] && match[7] && match[8]) {
         const linkText = match[7];
         const linkUrl = match[8];
         elements.push(
@@ -299,9 +229,34 @@ export function MarkdownParser({ content, className = '' }: MarkdownParserProps)
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline"
+            className="text-blue-400 hover:text-blue-300 underline decoration-blue-400 hover:decoration-blue-300 transition-colors duration-200 inline-flex items-center gap-1 cursor-pointer"
+            onClick={(e) => {
+              // Ensure the link is clickable by preventing any parent event handlers
+              e.stopPropagation();
+            }}
           >
             {linkText}
+            <ExternalLink className="w-3 h-3 inline-block" />
+          </a>
+        );
+      }
+      // Plain URLs (auto-link)
+      else if (match[9]) {
+        const url = fullMatch;
+        elements.push(
+          <a
+            key={`autolink-${match.index}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline decoration-blue-400 hover:decoration-blue-300 transition-colors duration-200 inline-flex items-center gap-1 cursor-pointer break-all"
+            onClick={(e) => {
+              // Ensure the link is clickable by preventing any parent event handlers
+              e.stopPropagation();
+            }}
+          >
+            {url}
+            <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
           </a>
         );
       }
