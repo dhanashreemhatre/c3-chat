@@ -133,7 +133,9 @@ export function ApiKeysTab({ onError, onSuccess }: ApiKeysTabProps) {
                                                 {String(keyEntry.provider)}
                                             </p>
                                             <p className="text-xs text-slate-400 font-mono">
-                                                {String(keyEntry.apiKey)}
+                                                {keyEntry.apiKey.length > 20
+                                                    ? `${keyEntry.apiKey.slice(0, 20)}***${keyEntry.apiKey.slice(-3)}`
+                                                    : keyEntry.apiKey}
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
