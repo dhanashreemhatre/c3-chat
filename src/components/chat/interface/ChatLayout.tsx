@@ -44,7 +44,6 @@ export function ChatLayout({
   onKeyDown,
   onToggleSearch,
   onFileUpload,
-  onShareChat,
   onStartChat,
   onSuggestionClick,
   onCopyMessage,
