@@ -3,10 +3,7 @@ import ChatSidebar from "../../ChatSidebar";
 import { ChatHeader } from "./ChatHeader";
 import { ChatContent } from "./ChatContent";
 
-interface Message {
-  id?: string;
-  content: string;
-}
+import type { Message } from "@/types/chat";
 
 interface ChatLayoutProps {
   sidebarOpen: boolean;
@@ -93,14 +90,14 @@ export function ChatLayout({
             onKeyDown={onKeyDown}
             onToggleSearch={onToggleSearch}
             onFileUpload={onFileUpload}
-            onShareChat={onShareChat}
             onStartChat={onStartChat}
             onSuggestionClick={onSuggestionClick}
             onCopyMessage={onCopyMessage}
             onMessageReaction={onMessageReaction}
             onShareMessage={onShareMessage}
-            inputRef={inputRef}
-          />
+            inputRef={inputRef} onShareChat={function (): Promise<string | null> {
+              throw new Error("Function not implemented.");
+            } }          />
         </div>
       </div>
     </div>
