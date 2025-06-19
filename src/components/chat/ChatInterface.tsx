@@ -19,6 +19,7 @@ import { useChatInput } from "./hooks/useChatInput";
 import { useUIState } from "./hooks/useUIState";
 import { useMessageHandlers } from "./hooks/useMessageHandlers";
 import { ChatInput } from "./interface/ChatInput";
+import { getModelRequestParams } from "../../utils/modelUtils";
 
 export default function ChatInterface() {
   const { state, dispatch } = useChatContext();
@@ -111,7 +112,14 @@ export default function ChatInterface() {
     console.log("File uploaded:", file);
   };
 
-  const currentModel = CHAT_MODELS.find((m) => m.id === state.selectedModel);
+  let normalizedProvider = "google";
+  try {
+    if (state.selectedModel && CHAT_MODELS.some(m => m.id === state.selectedModel)) {
+      normalizedProvider = getModelRequestParams(state.selectedModel).provider.toLowerCase();
+    }
+  } catch (e) {
+    console.error("Could not normalize provider for model:", state.selectedModel, e);
+  }
 
   return (
     <div
@@ -147,7 +155,7 @@ export default function ChatInterface() {
                     if (state.messages.length === 0 && !state.isLoading) {
                       return (
                         <EmptyState
-                          currentModel={currentModel}
+                          currentModel={CHAT_MODELS.find((m) => m.id === state.selectedModel)}
                           onStartChat={focusInput}
                           searchEnabled={state.searchEnabled}
                           onSuggestionClick={(suggestion) => {
@@ -185,6 +193,9 @@ export default function ChatInterface() {
                                 onCopy={handleCopyMessage}
                                 onReaction={handleMessageReaction}
                                 onShare={handleShareMessage}
+                                chatContext={state.messages}
+                                model={state.selectedModel}
+                                provider={normalizedProvider}
                               />
                             </div>
                           ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Bot,
   User,
@@ -14,12 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Message } from "../types/chat";
 import { formatTime } from "../utils/chat";
 import { MarkdownParser } from "./markdown/CustomMarkdown";
+import { createPortal } from "react-dom";
 
 interface MessageBubbleProps {
   message: Message;
   onCopy?: (content: string) => void;
   onReaction?: (messageId: string, reaction: "like" | "dislike") => void;
   onShare?: (messageId: string) => void;
+  chatContext?: Message[];
+  model?: string;
+  provider?: string;
 }
 
 export function MessageBubble({
@@ -27,11 +31,107 @@ export function MessageBubble({
   onCopy,
   onReaction,
   // onShare,
+  chatContext,
+  model,
+  provider,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false); // New state for expansion
   // const [showActions, setShowActions] = useState(false);
   const isUser = message.role === "user";
+
+  // --- New state for explain popup ---
+  const [selectedText, setSelectedText] = useState("");
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [explanation, setExplanation] = useState("");
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [popupLock, setPopupLock] = useState(false); // NEW
+
+  // --- Handler for text selection ---
+  const handleMouseUp = (e: React.MouseEvent) => {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const text = selection.toString();
+    if (text && contentRef.current && selection.anchorNode && contentRef.current.contains(selection.anchorNode)) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      // Position relative to viewport, adjust for scroll
+      setPopupPosition({ x: rect.left + rect.width / 2, y: rect.top - 8 + window.scrollY });
+      setSelectedText(text);
+      setShowPopup(true);
+    } else {
+      setShowPopup(false);
+      setSelectedText("");
+    }
+  };
+
+  // --- Handler for explain action ---
+  const handleExplain = async () => {
+    setIsLoadingExplanation(true);
+    setExplainError(null);
+    setShowModal(true);
+    setShowPopup(false);
+    window.getSelection()?.removeAllRanges();
+    try {
+      const res = await fetch("/api/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedText,
+          chatContext: (chatContext || []).map(m => ({ role: m.role, content: m.content })),
+          model,
+          provider,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to fetch explanation");
+      }
+      const data = await res.json();
+      setExplanation(data.explanation || "No explanation returned.");
+    } catch (err: any) {
+      setExplainError(err.message || "Failed to fetch explanation");
+      setExplanation("");
+    } finally {
+      setIsLoadingExplanation(false);
+    }
+  };
+
+  // --- Handler to close modal ---
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setExplanation("");
+  };
+
+  // --- Dismiss popup on scroll or click elsewhere ---
+  React.useEffect(() => {
+    const handleScrollOrClick = (e: MouseEvent | Event) => {
+      // Only dismiss if click is outside the popup and not locked
+      if (popupLock) {
+        // If locked, do not close
+        return;
+      }
+      if (e instanceof MouseEvent && popupRef.current && e.target && popupRef.current.contains(e.target as Node)) {
+        // Clicked inside popup, do nothing
+        return;
+      }
+      setShowPopup(false);
+      setSelectedText("");
+    };
+    if (showPopup) {
+      window.addEventListener("scroll", handleScrollOrClick, true);
+      window.addEventListener("mousedown", handleScrollOrClick, true);
+    }
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrClick, true);
+      window.removeEventListener("mousedown", handleScrollOrClick, true);
+    };
+  }, [showPopup]);
 
   const handleCopy = async () => {
     try {
@@ -82,6 +182,8 @@ export function MessageBubble({
           <div className="text-sm sm:text-base break-words whitespace-pre-wrap leading-relaxed
                        prose prose-invert prose-sm sm:prose-base
                        prose-p:mt-0 prose-p:mb-1 max-w-none overflow-wrap-anywhere"
+           ref={contentRef}
+           onMouseUp={handleMouseUp}
            >
             {/* Show loading spinner if assistant message is streaming and content is empty */}
             {!isUser && (message as any).isStreaming && !message.content && (
@@ -92,48 +194,6 @@ export function MessageBubble({
             )}
             {/* Otherwise show the message content */}
             {(!((message as any).isStreaming && !message.content)) && (
-              // <Markdown
-              //   components={{
-              //     code({ className, children, ...rest }) {
-              //       const match = /language-(\w+)/.exec(className || "");
-              //       return match ? (
-              //         <div className="max-w-60 sm:max-w-120 overflow-x-auto">
-              //         <SyntaxHighlighter
-              //           PreTag="div"
-              //           language={match[1]}
-              //           style={vscDarkPlus as any}
-              //           wrapLines={true}
-              //           {...rest}
-              //           ref={null}
-              //           className="text-xs sm:text-sm !bg-transparent"
-              //         >
-              //           {String(children).replace(/\n$/, '')}
-              //         </SyntaxHighlighter>
-              //         </div>
-              //       ) : (
-              //         <code {...rest} className={`${className} text-xs sm:text-sm`}>
-              //           {children}
-              //         </code>
-              //       );
-              //     },
-              //     p: ({ children }) => (
-              //       <p className="text-sm sm:text-base leading-tight mt-0 mb-1">
-              //         {children}
-              //       </p>
-              //     ),
-              //     h1: ({ children }) => (
-              //       <h1 className="text-lg sm:text-xl font-bold mt-0 mb-1">{children}</h1>
-              //     ),
-              //     h2: ({ children }) => (
-              //       <h2 className="text-base sm:text-lg font-bold mt-0 mb-1">{children}</h2>
-              //     ),
-              //     h3: ({ children }) => (
-              //       <h3 className="text-sm sm:text-base font-bold mt-0 mb-1">{children}</h3>
-              //     ),
-              //   }}
-              // >
-              //   {displayContent}
-              // </Markdown>
               <MarkdownParser
                 content={displayContent}/>
             )}
@@ -215,6 +275,81 @@ export function MessageBubble({
         <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
           <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
         </div>
+      )}
+
+      {/* --- Popup for Explain --- */}
+      {showPopup && popupPosition && createPortal(
+        <div
+          ref={popupRef}
+          style={{
+            position: "absolute",
+            left: popupPosition.x,
+            top: popupPosition.y,
+            zIndex: 9999,
+            background: "#222",
+            color: "#fff",
+            borderRadius: 6,
+            padding: "4px 10px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            transform: "translate(-50%, -100%)",
+            fontSize: 14,
+            cursor: "pointer"
+          }}
+          onMouseDown={() => {
+            setPopupLock(true);
+            handleExplain();
+            setTimeout(() => setPopupLock(false), 200); // Release lock after a short delay
+          }}
+        >
+          Explain
+        </div>,
+        document.body
+      )}
+
+      {/* --- Modal for Explanation --- */}
+      {showModal && createPortal(
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(20,20,20,0.7)",
+          zIndex: 10000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+          onClick={handleCloseModal}
+        >
+          <div style={{
+            background: "#111",
+            color: "#fff",
+            borderRadius: 14,
+            padding: 28,
+            minWidth: 320,
+            maxWidth: 480,
+            boxShadow: "0 4px 32px rgba(0,0,0,0.28)",
+            border: "1px solid #222",
+            position: "relative"
+          }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{marginTop:0, marginBottom:16, fontWeight:700, fontSize:20, letterSpacing: -0.5}}>Explanation</h3>
+            <div style={{marginBottom:20, fontSize:16, lineHeight:1.6}}>
+              {isLoadingExplanation ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 48 }}>
+                  <Loader2 className="animate-spin" style={{ width: 32, height: 32, color: '#fff', opacity: 0.85 }} />
+                </span>
+              ) : explainError ? (
+                <span style={{ color: '#ff5555' }}>{explainError}</span>
+              ) : (
+                explanation
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

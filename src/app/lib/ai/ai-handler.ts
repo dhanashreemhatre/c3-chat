@@ -16,6 +16,7 @@ interface AIHandlerOptions {
   provider: string;
   model: string;
   apiKey?: string;
+  streaming?: boolean;
 }
 
 export class AIHandler {
@@ -31,8 +32,9 @@ export class AIHandler {
     this.provider = options.provider.toLowerCase();
     this.model = options.model;
     this.apiKey = options.apiKey;
+    const streaming = options.streaming ?? false;
 
-    console.log(`AI Handler initializing with provider: ${this.provider}, model: ${this.model}`);
+    console.log(`AI Handler initializing with provider: ${this.provider}, model: ${this.model}, streaming: ${streaming}`);
 
     switch (this.provider) {
       case "openai":
@@ -41,7 +43,7 @@ export class AIHandler {
           openAIApiKey: this.apiKey || process.env.OPENAI_API_KEY!,
           modelName: this.model,
           temperature: 0.5,
-          streaming: true,
+          streaming,
         });
         break;
 
@@ -51,7 +53,7 @@ export class AIHandler {
           anthropicApiKey: this.apiKey || process.env.ANTHROPIC_API_KEY!,
           modelName: this.model,
           temperature: 0.5,
-          streaming: true,
+          streaming,
         });
         break;
 
@@ -61,7 +63,7 @@ export class AIHandler {
           apiKey: this.apiKey || process.env.GOOGLE_API_KEY!,
           model: this.model,
           temperature: 0.5,
-          streaming: true,
+          streaming,
         });
         break;
 
@@ -89,6 +91,37 @@ export class AIHandler {
       messagesCount: messages.length
     });
 
+    // Create a streaming-enabled chatModel for streaming
+    let streamingChatModel;
+    switch (this.provider) {
+      case "openai":
+        streamingChatModel = new ChatOpenAI({
+          openAIApiKey: this.apiKey || process.env.OPENAI_API_KEY!,
+          modelName: this.model,
+          temperature: 0.5,
+          streaming: true,
+        });
+        break;
+      case "claude":
+        streamingChatModel = new ChatAnthropic({
+          anthropicApiKey: this.apiKey || process.env.ANTHROPIC_API_KEY!,
+          modelName: this.model,
+          temperature: 0.5,
+          streaming: true,
+        });
+        break;
+      case "google":
+        streamingChatModel = new ChatGoogleGenerativeAI({
+          apiKey: this.apiKey || process.env.GOOGLE_API_KEY!,
+          model: this.model,
+          temperature: 0.5,
+          streaming: true,
+        });
+        break;
+      default:
+        throw new Error(`Provider "${this.provider}" not supported.`);
+    }
+
     const langchainMessages = messages.map((msg) => {
       if (msg.role === "system") return new SystemMessage(msg.content);
       if (msg.role === "user") return new HumanMessage(msg.content);
@@ -97,7 +130,7 @@ export class AIHandler {
 
     try {
       // Use LangChain's streaming capability
-      const stream = await this.chatModel.stream(langchainMessages);
+      const stream = await streamingChatModel.stream(langchainMessages);
 
       for await (const chunk of stream) {
         // Extract the content from the chunk
