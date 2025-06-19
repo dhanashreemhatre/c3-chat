@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   const prompt = [
     {
       role: "system",
-      content: "You are an AI assistant. Explain the highlighted text in the context of the chat below. Be concise, clear, and reference the chat context if relevant.",
+      content: "You are an AI assistant. Explain the highlighted text in the context of the chat below. Be concise, clear, and reference the chat context if relevant. Keep your response short and to the point.",
     },
     ...chatContext.map((msg: any) => ({ role: msg.role, content: msg.content })),
     {
