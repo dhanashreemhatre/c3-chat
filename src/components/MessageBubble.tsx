@@ -353,25 +353,6 @@ export function MessageBubble({
                 explanation
               )}
             </div>
-            <button
-              style={{
-                background: "#222",
-                color: "#fff",
-                border: "1px solid #333",
-                borderRadius: 6,
-                padding: "7px 20px",
-                fontWeight: 500,
-                fontSize: 15,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-                cursor: "pointer",
-                transition: "background 0.2s, color 0.2s",
-                outline: "none"
-              }}
-              onClick={handleCloseModal}
-              onMouseDown={e => e.stopPropagation()}
-            >
-              Close
-            </button>
           </div>
         </div>,
         document.body
