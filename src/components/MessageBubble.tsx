@@ -72,9 +72,6 @@ export function MessageBubble({
 
   // --- Handler for explain action ---
   const handleExplain = async () => {
-    console.log('[Explain] handleExplain called');
-    console.log('[Explain] selectedText:', selectedText);
-    console.log('[Explain] chatContext:', chatContext);
     setIsLoadingExplanation(true);
     setExplainError(null);
     setShowModal(true);
@@ -91,17 +88,13 @@ export function MessageBubble({
           provider,
         }),
       });
-      console.log('[Explain] API response status:', res.status);
       if (!res.ok) {
         const data = await res.json();
-        console.log('[Explain] API error response:', data);
         throw new Error(data.error || "Failed to fetch explanation");
       }
       const data = await res.json();
-      console.log('[Explain] API success response:', data);
       setExplanation(data.explanation || "No explanation returned.");
     } catch (err: any) {
-      console.error('[Explain] API call failed:', err);
       setExplainError(err.message || "Failed to fetch explanation");
       setExplanation("");
     } finally {
@@ -303,8 +296,9 @@ export function MessageBubble({
             cursor: "pointer"
           }}
           onMouseDown={() => {
-            console.log('[Explain] Popup mouse down');
+            setPopupLock(true);
             handleExplain();
+            setTimeout(() => setPopupLock(false), 200); // Release lock after a short delay
           }}
         >
           Explain
